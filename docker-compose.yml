@@ -1,1 +1,67 @@
-???
+version: '3.9'
+
+services:
+  api:
+    build: ./backend/api
+    expose:
+      - "${PORT}"
+    ports:
+      - "${PORT}:${FASTAPI_PORT}"
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - db
+    volumes:
+      - ./backend/common:/app/common
+
+  rabbitmq:
+    image: rabbitmq:3.13.7-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 30s
+      retries: 3
+
+  pg_consumer:
+    build: ./backend/pg_consumer
+    ports:
+      - "8090:8090"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./backend/common:/consumer/common
+    env_file:
+      - ./backend/.env
+
+  db:
+    image: postgres:13.2
+    ports:
+      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
+    command: [ "postgres", "-c", "log_statement=all", "-c", "log_destination=stderr" ]
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "postgres", "-d", "postgres" ]
+      interval: 1s
+      retries: 20
+    env_file:
+      - ./backend/.env
+
+  alembic:
+    build: ./backend/api
+    entrypoint: [ "alembic" ]
+    command: [ "upgrade", "head" ]
+    # command: ["alembic", "revision", "--autogenerate", "-m", "'New migration'"]
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend/common:/app/common
+
+volumes:
+  postgres-data:
