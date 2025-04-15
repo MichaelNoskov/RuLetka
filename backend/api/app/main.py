@@ -16,7 +16,7 @@ app.include_router(hobbies_router, prefix="/api")
 
 @app.middleware('http')
 async def security_middleware(request: Request, handler: Callable):
-    try:
+    # try:
         public_paths = [
             '/docs',
             '/openapi.json',
@@ -42,11 +42,11 @@ async def security_middleware(request: Request, handler: Callable):
             )
         return await handler(request)
 
-    except Exception as exc:
-        return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={'Error': 'Internal server error...'}
-        )
+    # except Exception as exc:
+    #     return JSONResponse(
+    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    #         content={'Error': 'Internal server error...'}
+    #     )
 
 
 origins = [

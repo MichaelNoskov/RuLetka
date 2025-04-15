@@ -61,3 +61,24 @@ async def handle_event_get_user_info(body: Dict[str, Any]) -> None:
         user = UserInfo.model_validate(user.__dict__)
         serialized_data = user.model_dump_json().encode('utf-8')
     await send_answer(serialized_data, "users", user_id)
+
+
+async def handle_event_set_user_info(body: Dict[str, Any]) -> None:
+    user_id = body.get('user_id')
+
+    async with async_session() as db:
+        result = await db.execute(select(User).where(User.id == user_id))
+        user = result.scalars().first()
+
+    if not user:
+        return
+    
+    new_info = UserInfo.model_validate(body.get('new_info'))
+
+    # Обновляем только указанные поля
+    for key, value in new_info.model_dump(exclude_unset=True).items():
+        setattr(user, key, value)
+
+    user = UserInfo.model_validate(user.__dict__)
+    serialized_data = user.model_dump_json().encode('utf-8')
+    await send_answer(serialized_data, "users", user_id)

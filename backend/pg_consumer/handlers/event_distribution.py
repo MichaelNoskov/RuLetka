@@ -2,7 +2,7 @@ from typing import Any, Dict
 
 from logger import logger
 from handlers.hobbies import handle_event_hobbies, handle_event_hobby
-from handlers.users import handle_event_create_user, handle_event_get_user, handle_event_get_user_info
+from handlers.users import handle_event_create_user, handle_event_get_user, handle_event_get_user_info, handle_event_set_user_info
 
 
 async def handle_event_distribution(body: Dict[str, Any]) -> None:
@@ -21,3 +21,5 @@ async def handle_event_distribution(body: Dict[str, Any]) -> None:
             return
         case 'get_user_info':
             await handle_event_get_user_info(body)
+        case 'set_user_info':
+            await handle_event_set_user_info(body)

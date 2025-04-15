@@ -54,7 +54,6 @@ services:
     build: ./backend/api
     entrypoint: [ "alembic" ]
     command: [ "upgrade", "head" ]
-    # command: ["alembic", "revision", "--autogenerate", "-m", "'New migration'"]
     depends_on:
       db:
         condition: service_healthy

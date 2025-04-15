@@ -1,6 +1,7 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from pydantic.types import PastDate
 from uuid import UUID
+from datetime import date
 
 
 class Tocken(BaseModel):
