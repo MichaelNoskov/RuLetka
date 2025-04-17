@@ -22,7 +22,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             pass
 
 
-
 def create_app() -> FastAPI:
     app = FastAPI(docs_url='/swagger', lifespan=lifespan)
     return app
