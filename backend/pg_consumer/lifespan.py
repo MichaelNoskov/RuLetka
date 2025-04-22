@@ -7,7 +7,7 @@ from logger import logger
 
 
 async def main() -> None:
-    queue_name = settings.MAIN_QUEUE
+    queue_name = settings.DB_QUEUE
     async with rabbit.channel_pool.acquire() as channel:
 
         await channel.set_qos(prefetch_count=10)

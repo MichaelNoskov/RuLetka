@@ -24,7 +24,8 @@ class Settings(BaseSettings):
     CLICKHOUSE_TCP_PORT: int
 
     USER_QUEUE: str = 'user.{user_id}'
-    MAIN_QUEUE: str = 'user_ask'
+    DB_QUEUE: str = 'user_db_ask'
+    MODEL_QUEUE: str = 'user_click_ask'
 
     SECRET_KEY: str = "asfdslknfsdfsdfjksdlkjfkjdsfjskjfsjdfndsfnkjfnskjfskjfskjfk"
     ALGORITHM: str = "HS256"
