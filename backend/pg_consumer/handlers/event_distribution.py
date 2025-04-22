@@ -21,5 +21,7 @@ async def handle_event_distribution(body: Dict[str, Any]) -> None:
             return
         case 'get_user_info':
             await handle_event_get_user_info(body)
+            return
         case 'set_user_info':
             await handle_event_set_user_info(body)
+            return

@@ -16,7 +16,15 @@ class Settings(BaseSettings):
     RABBIT_USER: str
     RABBIT_PASSWORD: str
 
+    CLICKHOUSE_HOST: str
+    CLICKHOUSE_USER: str
+    CLICKHOUSE_PASSWORD: str
+    CLICKHOUSE_DB: str
+    CLICKHOUSE_HTTP_PORT: int
+    CLICKHOUSE_TCP_PORT: int
+
     USER_QUEUE: str = 'user.{user_id}'
+    MAIN_QUEUE: str = 'user_ask'
 
     SECRET_KEY: str = "asfdslknfsdfsdfjksdlkjfkjdsfjskjfsjdfndsfnkjfnskjfskjfskjfk"
     ALGORITHM: str = "HS256"

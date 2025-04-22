@@ -27,14 +27,14 @@ async def send_message(msg: str, exchange_name: str, user_id: str, wait_answer: 
     async with channel_pool.acquire() as channel:
         exchange = await channel.declare_exchange(exchange_name, ExchangeType.DIRECT, durable=True)
 
-        queue = await channel.declare_queue('user_ask', durable=True)
-        await queue.bind(exchange, 'user_ask')
+        queue = await channel.declare_queue('', durable=True)
+        await queue.bind(exchange, settings.MAIN_QUEUE)
 
         await exchange.publish(
             aio_pika.Message(
                 msgpack.packb(msg),
             ),
-            'user_ask',
+            settings.MAIN_QUEUE,
         )
 
         if not wait_answer: return

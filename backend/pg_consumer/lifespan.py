@@ -2,11 +2,12 @@ import msgpack
 
 from handlers.event_distribution import handle_event_distribution
 from common.storage import rabbit
+from common.core.config import settings
 from logger import logger
 
 
 async def main() -> None:
-    queue_name = 'user_ask'
+    queue_name = settings.MAIN_QUEUE
     async with rabbit.channel_pool.acquire() as channel:
 
         await channel.set_qos(prefetch_count=10)

@@ -1,0 +1,8 @@
+numpy
+clickhouse-connect
+pydantic-settings
+msgpack
+aio-pika
+aiochclient
+aiohttp
+sentence-transformers
