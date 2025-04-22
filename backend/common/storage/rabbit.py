@@ -27,7 +27,7 @@ async def send_message(msg: str, exchange_name: str, user_id: str, wait_answer: 
     async with channel_pool.acquire() as channel:
         exchange = await channel.declare_exchange(exchange_name, ExchangeType.DIRECT, durable=True)
 
-        queue = await channel.declare_queue('', durable=True)
+        queue = await channel.declare_queue(settings.MAIN_QUEUE, durable=True)
         await queue.bind(exchange, settings.MAIN_QUEUE)
 
         await exchange.publish(
