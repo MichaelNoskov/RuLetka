@@ -54,7 +54,7 @@ async def security_middleware(request: Request, handler: Callable):
 
 
 origins = [
-    "http://localhost:5173",  # Ваш фронтенд
+    "http://0.0.0.0:3000",  # Ваш фронтенд
 ]
 
 app.add_middleware(
