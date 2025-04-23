@@ -11,3 +11,4 @@ python-multipart
 msgpack
 aio-pika
 bcrypt
+aiortc

@@ -3,8 +3,11 @@ from typing import Callable
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+
 from app.auth.router import router as auth_router
 from app.expirience.router import router as hobbies_router
+from app.rooms.router import router as rooms_router
+
 from app.utils import verify_token
 from common.core.config import settings
 
@@ -12,6 +15,7 @@ app = FastAPI()
 
 app.include_router(auth_router, prefix="/auth")
 app.include_router(hobbies_router, prefix="/api")
+app.include_router(rooms_router, '/room')
 
 
 @app.middleware('http')
