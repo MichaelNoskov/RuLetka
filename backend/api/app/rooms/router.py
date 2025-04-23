@@ -82,7 +82,7 @@ async def initiate_connection(request: Request):
     pc.addTransceiver('audio', 'recvonly')
     pc.addTransceiver('video', 'recvonly')
     
-    rooms[room_id].routerend(pc)
+    rooms[room_id].append(pc)
     tracks[pc] = set()
     
     for other_pc in rooms[room_id]:
