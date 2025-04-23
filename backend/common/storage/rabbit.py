@@ -23,18 +23,18 @@ async def get_channel() -> aio_pika.Channel:
 channel_pool: Pool = Pool(get_channel, max_size=10)
 
 
-async def send_message(msg: str, exchange_name: str, user_id: str, wait_answer: bool = False):
+async def send_message(msg: str, queue_name: str, exchange_name: str, user_id: str, wait_answer: bool = False):
     async with channel_pool.acquire() as channel:
         exchange = await channel.declare_exchange(exchange_name, ExchangeType.DIRECT, durable=True)
 
-        queue = await channel.declare_queue(settings=settings.DB_QUEUE, durable=True)
-        await queue.bind(exchange, settings=settings.DB_QUEUE)
+        queue = await channel.declare_queue(queue_name, durable=True)
+        await queue.bind(exchange, queue_name)
 
         await exchange.publish(
             aio_pika.Message(
                 msgpack.packb(msg),
             ),
-            settings=settings.DB_QUEUE,
+            queue_name,
         )
 
         if not wait_answer: return

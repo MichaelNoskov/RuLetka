@@ -27,8 +27,10 @@ async def register(data: UserRegister) -> UserLogin | dict:
     user_id = str(uuid4())
     msg = {'user_id': user_id, 'action': 'create_user', 'new_user': data.model_dump()}
 
+    # answ = await send_message(msg={'action': 'create_user', 'description': data.description}, queue_name=settings.MODEL_QUEUE, exchange_name='users', user_id=user_id, wait_answer=True)
+
     try:
-        answer = await send_message(msg, 'users', user_id, True)
+        answer = await send_message(msg, settings.DB_QUEUE, 'users', user_id, True)
         info: UserLogin = UserLogin.model_validate_json(answer)
         return info
     except Exception as exc:
@@ -40,7 +42,7 @@ async def login(response: Response, form_data: OAuth2PasswordRequestForm = Depen
     user_id = str(uuid4())
     msg = {'user_id': user_id, 'action': 'get_user', 'username': form_data.username}
     try:
-        answer = await send_message(msg, 'users', user_id, True)
+        answer = await send_message(msg, settings.DB_QUEUE, 'users', user_id, True)
         user: UserLogin = UserLogin.model_validate_json(answer)
     except Exception as exc:
         raise HTTPException(status_code=403, detail="Некорректные учётные данные")

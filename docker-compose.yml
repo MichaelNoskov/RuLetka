@@ -62,42 +62,42 @@ services:
     volumes:
       - ./backend/common:/app/common
 
-  clickhouse:
-    image: clickhouse/clickhouse-server:latest
-    ports:
-      - "${CLICKHOUSE_HTTP_PORT}:8123"
-      - "${CLICKHOUSE_TCP_PORT}:9000"
-    env_file:
-      - ./backend/.env
-    volumes:
-      - clickhouse_data:/var/lib/clickhouse
-      - clickhouse_log:/var/log/clickhouse-server
-    healthcheck:
-      test: [ "CMD-SHELL", "clickhouse-client --query 'SELECT 1' || exit 1" ]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+  # clickhouse:
+  #   image: clickhouse/clickhouse-server:latest
+  #   ports:
+  #     - "${CLICKHOUSE_HTTP_PORT}:8123"
+  #     - "${CLICKHOUSE_TCP_PORT}:9000"
+  #   env_file:
+  #     - ./backend/.env
+  #   volumes:
+  #     - clickhouse_data:/var/lib/clickhouse
+  #     - clickhouse_log:/var/log/clickhouse-server
+  #   healthcheck:
+  #     test: [ "CMD-SHELL", "clickhouse-client --query 'SELECT 1' || exit 1" ]
+  #     interval: 5s
+  #     timeout: 5s
+  #     retries: 5
 
-  click_migration:
-    build: ./backend/common/storage/click_migrations
-    env_file:
-      - ./backend/.env
-    depends_on:
-      clickhouse:
-        condition: service_healthy
-    volumes:
-      - ./backend/common:/clickhouse/common
+  # click_migration:
+  #   build: ./backend/common/storage/click_migrations
+  #   env_file:
+  #     - ./backend/.env
+  #   depends_on:
+  #     clickhouse:
+  #       condition: service_healthy
+  #   volumes:
+  #     - ./backend/common:/clickhouse/common
 
-  data_processor:
-    build: ./backend/data_processor
-    depends_on:
-      clickhouse:
-        condition: service_healthy
-    volumes:
-      - ./backend/common:/data_processor/common
-    env_file:
-      - ./backend/.env
-    restart: unless-stopped
+  # data_processor:
+  #   build: ./backend/data_processor
+  #   depends_on:
+  #     clickhouse:
+  #       condition: service_healthy
+  #   volumes:
+  #     - ./backend/common:/data_processor/common
+  #   env_file:
+  #     - ./backend/.env
+  #   restart: unless-stopped
 
 volumes:
   postgres-data:

@@ -5,6 +5,7 @@ from common.storage.rabbit import send_message
 from uuid import uuid4
 from app.utils import get_user_id
 from pydantic.types import PastDate
+from common.core.config import settings
 
 router = APIRouter()
 
@@ -18,7 +19,7 @@ async def create_hobby(
     body = {'user_id': user_id, 'action': 'create_hobby', 'new_hobby': hobby.model_dump()}
 
     try:
-        answer = await send_message(body, 'hobbies', user_id, wait_answer=True)
+        answer = await send_message(body, settings.DB_QUEUE, 'hobbies', user_id, wait_answer=True)
         info: HobbySchema = HobbySchema.model_validate_json(answer)
         return info
     except Exception as exc:
@@ -32,7 +33,7 @@ async def read_hobbies() -> HobbyList | dict:
     body = {'user_id': user_id, 'action': 'get_hobbies'}
 
     try:
-        answer = await send_message(body, 'hobbies', user_id, wait_answer=True)
+        answer = await send_message(body, settings.DB_QUEUE, 'hobbies', user_id, wait_answer=True)
         info: HobbyList = HobbyList.model_validate_json(answer)
         return info
     except Exception as exc:
@@ -45,7 +46,7 @@ async def get_userdata(user_id: str = Depends(get_user_id)) -> UserInfo | dict:
     body = {'user_id': user_id, 'action': 'get_user_info'}
 
     try:
-        answer = await send_message(body, 'users', user_id, wait_answer=True)
+        answer = await send_message(body, settings.DB_QUEUE, 'users', user_id, wait_answer=True)
         info: UserInfo = UserInfo.model_validate_json(answer)
         return info
     except Exception as exc:
@@ -75,7 +76,7 @@ async def update_userdata(username: str = Form(...),
     body = {'user_id': user_id, 'action': 'set_user_info', 'new_info': info.model_dump()}
 
     # try:
-    answer = await send_message(body, 'users', user_id, wait_answer=True)
+    answer = await send_message(body, settings.DB_QUEUE, 'users', user_id, wait_answer=True)
     info: UserInfo = UserInfo.model_validate_json(answer)
     return info
     # except Exception as exc:

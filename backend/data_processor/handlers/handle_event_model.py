@@ -13,8 +13,8 @@ async def handle_event_generate_vector(body: Dict[str, Any]) -> None:
     vector = model.generate_embedding(str(body.get('description')))
 
     async with ClickHouseAsyncClient(
-        host=settings.CLICKHOUSE_HOST,
-        port=settings.CLICKHOUSE_PORT,
+        host='localhost',
+        port=settings.CLICKHOUSE_HTTP_PORT,
         user=settings.CLICKHOUSE_USER,
         password=settings.CLICKHOUSE_PASSWORD
     ) as client:
@@ -27,7 +27,7 @@ async def handle_event_get_best(body: Dict[str, Any]) -> None:
 
     async with ClickHouseAsyncClient(
         host=settings.CLICKHOUSE_HOST,
-        port=settings.CLICKHOUSE_PORT,
+        port=settings.CLICKHOUSE_HTTP_PORT,
         user=settings.CLICKHOUSE_USER,
         password=settings.CLICKHOUSE_PASSWORD
     ) as client:
