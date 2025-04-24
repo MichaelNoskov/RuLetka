@@ -1,0 +1,233 @@
+// client.js (Review the renegotiation part to avoid m-line errors)
+
+import { URLs } from "../const";
+
+var pc = null;
+var localStream = null;
+var audioBlock = document.getElementById("audioContent");
+// var connectButton = document.getElementById("connect");
+// var disconnectButton = document.getElementById("disconnect");
+// var statusText = document.getElementById("status");
+// var usersList = document.getElementById("users");
+// var roomIDInput = document.getElementById("roomID");
+var emptySound = true;
+var statsIntervalId = null;
+let previousStats = {};
+let room_id = null;
+
+async function startStats() {
+    if (!pc) return;
+    statsIntervalId = setInterval(async () => {
+        try {
+            const stats = await pc.getStats();
+            stats.forEach(report => {
+                if (report.type === 'inbound-rtp' && report.kind === 'audio') {
+                    const currentPacketsLost = report.packetsLost;
+                    const currentPacketsReceived = report.packetsReceived;
+                    const ssrc = report.ssrc;
+                    const jitter = report.jitter;
+                    const bytesReceived = report.bytesReceived;
+                    if (previousStats[ssrc]) {
+                        const previousPacketsLost = previousStats[ssrc].packetsLost;
+                        const previousPacketsReceived = previousStats[ssrc].packetsReceived;
+                        const previousBytesReceived = previousStats[ssrc].bytesReceived;
+                        const packetsLostDelta = currentPacketsLost - previousPacketsLost;
+                        const packetsReceivedDelta = currentPacketsReceived - previousPacketsReceived;
+                        const bytesReceivedDelta = bytesReceived - previousBytesReceived
+                        const totalPacketsDelta = packetsLostDelta + packetsReceivedDelta;
+                        let packetLossPercentage = 0;
+                        if (totalPacketsDelta > 0) {
+                            packetLossPercentage = (packetsLostDelta / totalPacketsDelta) * 100;
+                            const bitrate = bytesReceivedDelta * 8 / 1000;
+                            // statusText.textContent = `[Inbound Audio] Packet Loss: ${packetLossPercentage.toFixed(2)}%, Jitter: ${jitter}, Bitrate: ${bitrate} kbps`;
+                            previousStats[ssrc] = {
+                                packetsLost: currentPacketsLost,
+                                packetsReceived: currentPacketsReceived,
+                                bytesReceived: bytesReceived
+                            };
+                        }
+                    }
+                } else if (report.type === 'outbound-rtp' && report.kind === 'audio') {
+                    const currentPacketsLost = report.packetsLost;
+                    const currentPacketsSent = report.packetsSent;
+                    const ssrc = report.ssrc;
+                    const bytesSent = report.bytesSent;
+                    if (previousStats[ssrc]) {
+                        const previousPacketsLost = previousStats[ssrc].packetsLost;
+                        const previousPacketsSent = previousStats[ssrc].packetsSent;
+                        const previousBytesSent = previousStats[ssrc].bytesSent;
+                        const packetsLostDelta = currentPacketsLost - previousPacketsLost;
+                        const packetsSentDelta = currentPacketsSent - previousPacketsSent;
+                        const bytesSentDelta = bytesSent - previousBytesSent
+                        const totalPacketsDelta = packetsLostDelta + packetsSentDelta;
+                        let packetLossPercentage = 0;
+                        if (totalPacketsDelta > 0) {
+                            packetLossPercentage = (packetsLostDelta / totalPacketsDelta) * 100;
+                            const bitrate = bytesSentDelta * 8 / 1000;
+                            // statusText.textContent = `[Outbound Audio] Packet Loss: ${packetLossPercentage.toFixed(2)}%, Bitrate: ${bitrate} kbps`;
+                            previousStats[ssrc] = {
+                                packetsLost: report.packetsLost,
+                                packetsSent: report.packetsSent,
+                                bytesSent: report.bytesSent
+                            };
+                        }
+                    }
+                }
+            });
+        } catch (e) {
+            console.error("Error getting stats:", e);
+        }
+    }, 1000);
+}
+
+function stopStats() {
+    clearInterval(statsIntervalId);
+}
+
+export async function initiateConnection() {
+    try {
+        // connectButton.style.visibility = 'hidden';
+        // disconnectButton.style.visibility = 'visible';
+        // statusText.textContent = 'Создаём соединение'
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+        console.log(localStream);
+
+        document.getElementById('localVideo').srcObject = localStream;
+
+        pc = new RTCPeerConnection();
+        localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+        pc.addEventListener('track', (evt) => {
+            console.log(`Tack status: ${evt.track.readyState}`)
+            audioBlock = document.getElementById("audioContent");
+            if (evt.track.kind === 'video') {
+                document.getElementById('remoteVideo').srcObject = evt.streams[0];
+            } else if (evt.track.kind === 'audio') {
+                let audioElement = document.createElement('audio');
+                audioElement.srcObject = evt.streams[0];
+                audioElement.type = "audio/mpeg";
+                audioElement.autoplay = true;
+                audioBlock.appendChild(audioElement);
+                audioElement.load();
+                emptySound = false;
+                console.log(`Received track (${evt.track.kind})`);
+            }
+        });
+        pc.ondatachannel = (event) => {
+            const receiveChannel = event.channel;
+            receiveChannel.onopen = () => {
+                console.log("Data channel is open!");
+            };
+            receiveChannel.onmessage = async (event) => {
+                let info;
+                try {
+                    info = JSON.parse(event.data)
+                } catch (error) {
+                    info = { 'action': 'none' }
+                }
+                if (info.action === 'renegotiating') {
+                    // statusText.textContent = 'Сервер хочет устроить пересогласование'
+                    console.log(`Received negotiating ask from sever`);
+
+                    const offer = await pc.createOffer();
+                    await pc.setLocalDescription(offer);
+
+                    receiveChannel.send(
+                        JSON.stringify({
+                            sdp: pc.localDescription.sdp,
+                            type: pc.localDescription.type,
+                        })
+                    );
+                } else if (info.action === 'answer') {
+                    console.log(`Received negotiating answer from sever`);
+                    // statusText.textContent = 'Получен ответ на оффер для пересогласования'
+                    await pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(event.data)));
+                } else if (info.action === 'users') {
+                    console.log(info.users)
+                    // usersList.innerHTML = ''
+                    info.users.forEach((item) => {
+                        const li = document.createElement("li");
+                        li.textContent = item;
+                        // usersList.appendChild(li);
+                    });
+                }
+            };
+        };
+        // statusText.textContent = 'Отправляем запрос на подключение'
+        const response = await fetch(`${URLs.backendHost}/room/initiate_connection`, {  //Removed the room id
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },            
+            credentials: 'include',
+        });
+        const offerData = await response.json();
+        console.log('Server offer asked')
+        // statusText.textContent = 'Получен оффер на соединение'
+        const offer = new RTCSessionDescription(offerData);
+        await pc.setRemoteDescription(offer);
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        await fetch(`${URLs.backendHost}/room/answer`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+                sdp: answer.sdp,
+                type: answer.type,
+                id: offerData.id,
+                room_id: offerData.room_id,
+            }),
+        });
+        // statusText.textContent = 'Отправлен ответ на оффер для подключения'
+        console.log('Answer sended to server')
+        startStats();
+    } catch (error) {
+        console.error("Error starting WebRTC:", error);
+        alert("Failed to start WebRTC: " + error.message);
+    }
+}
+
+export async function disconnect() {
+    if (pc) {
+        // statusText.textContent = 'Отключаемся...';
+        stopStats();
+
+        // Остановка локального потока
+        if (localStream) {
+            localStream.getTracks().forEach(track => {
+                track.stop();
+                localStream.removeTrack(track); // Ensure the track is removed from the stream
+            });
+        }
+
+        // Очистка удаленного видео
+        document.getElementById('remoteVideo').srcObject = null;
+
+        pc.getSenders().forEach(sender => {
+            pc.removeTrack(sender);
+        });
+
+        pc.close();
+        pc = null;
+        localStream = null;
+
+        document.getElementById('localVideo').srcObject = null;
+        audioBlock.innerHTML = '';
+        // statusText.textContent = 'Отключено';
+        // connectButton.style.visibility = 'visible';
+        // disconnectButton.style.visibility = 'hidden';
+    }
+}
+
+function stop() {
+    stopStats();
+    if (pc) {
+        localStream.getTracks().forEach(track => track.stop());
+        pc.close();
+        localStream = null;
+        pc = null;
+        audioBlock.innerHTML = '';
+    }
+}

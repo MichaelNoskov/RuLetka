@@ -1,0 +1,71 @@
+body {
+  background-color: #E0E0E0;
+  font-family: Roboto, sans-serif;
+}
+
+.profile-container {
+  background-color: #FAFAFA;
+  justify-content: center;
+  margin: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+
+.header-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 20px;
+  padding-top: 30px;
+}
+
+.personal-container {
+  display: flex;
+  flex-direction: column;
+  padding: 40px;
+  padding-top: 20px;
+  gap: 20px;
+}
+
+.interests-container {
+  display: flex;
+  flex-direction: column;
+  padding: 40px;
+  padding-top: 20px;
+  gap: 20px;
+}
+
+.interests-wrapper {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.profile-title {
+  font-size: 30px;
+  font-weight: bold;
+  color: #000000;
+  text-align: left;
+  margin: 0;
+}
+
+.interests-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #565967;
+  text-align: left;
+  margin: 0;
+}
+
+.text-field {
+  width: 100%;
+  align-self: center;
+}
+
+.save-changes-button {
+  display: flex;
+  width: 100%;
+  font-weight: bold;
+  padding: 10px;
+}
