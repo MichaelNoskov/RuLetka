@@ -15,7 +15,7 @@ app = FastAPI()
 
 app.include_router(auth_router, prefix="/auth")
 app.include_router(hobbies_router, prefix="/api")
-app.include_router(rooms_router, '/room')
+app.include_router(rooms_router, prefix='/room')
 
 
 @app.middleware('http')
