@@ -1,10 +1,15 @@
-import asyncio
-from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi import APIRouter, Request, Depends
+from fastapi.responses import JSONResponse
 from aiortc import RTCPeerConnection, RTCSessionDescription, MediaStreamTrack
 from aiortc.contrib.media import MediaRelay
 import json
 import random
+from app.utils import get_user_id
+from common.core.config import settings
+from common.storage.rabbit import send_message
+from common.storage.redis import VectorStorage
+from logger import logger
+import numpy as np
 
 router = APIRouter()
 
@@ -37,23 +42,19 @@ def find_available_room():
             return room_id
     return None
 
-def generate_room_id():
-    """Генерирует новый уникальный ID комнаты."""
-    return str(random.randint(1000, 9999))  # Simple random ID
+async def save_room(user_id):
+    answer = await send_message({'user_id': user_id, 'action': 'get_user', 'target_user_id': user_id}, settings.DB_QUEUE, 'users', user_id, wait_answer=True)
+    logger.info(answer)
+    VectorStorage.save_vector(user_id, np.array(eval(answer)))
 
 @router.post('/initiate_connection')
-async def initiate_connection(request: Request):
+async def initiate_connection(request: Request, user_id: str = Depends(get_user_id)):
     room_id = find_available_room()
 
     if not room_id:
-        room_id = generate_room_id()
+        room_id = user_id
+        await save_room(room_id)
         rooms[room_id] = []
-        print(f"Created new room: {room_id}")
-    else:
-        print(f"Joining existing room: {room_id}")
-
-    if len(rooms[room_id]) >= 2:
-        return JSONResponse(content={'error': 'Room is full.'}, status_code=403)
 
     pc = RTCPeerConnection()
     pc.client_id = str(random.randint(0, 100)).rjust(3, '0')
@@ -67,6 +68,10 @@ async def initiate_connection(request: Request):
 
     @data_channel.on('message')
     async def on_message(message):
+        if message == 'keepalive':
+            data_channel.send('keepalive')
+            return
+
         offerData = json.loads(message)
         await pc.setRemoteDescription(RTCSessionDescription(sdp=offerData['sdp'], type=offerData['type']))
         answer = await pc.createAnswer()
@@ -145,24 +150,20 @@ async def answer(request: Request):
     return JSONResponse(content={'message': 'Connection established.'})
 
 async def remove_client_from_room(pc: RTCPeerConnection):
-    """Удаляет клиента из комнаты и рассылает обновления."""
-    for room_id, room in rooms.items():
+    for room_id, room in list(rooms.items()):
         if pc in room:
-            rooms[room_id].remove(pc)
-            await send_user_list(room_id)
-            
-            # Remove tracks from other peers
-            for other_pc in room:
-                for transceiver in other_pc.getTransceivers():
-                    if transceiver.receiver and transceiver.receiver.track:
-                        if transceiver.receiver.track in tracks.get(pc, set()):
-                            other_pc.removeTrack(transceiver.sender.track)  # Remove the track
+            room.remove(pc)
 
-            await pc.close()
+            for other_pc in room:
+                await other_pc.close()
+                if other_pc in tracks:
+                    del tracks[other_pc]
+            
+            if room_id in rooms:
+                del rooms[room_id]
 
             if pc in tracks:
                 del tracks[pc]
 
-            if not rooms[room_id]:
-                del rooms[room_id]
-            return
+            break
+    await pc.close()

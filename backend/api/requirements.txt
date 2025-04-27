@@ -12,3 +12,4 @@ msgpack
 aio-pika
 bcrypt
 aiortc
+numpy

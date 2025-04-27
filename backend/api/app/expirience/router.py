@@ -73,11 +73,17 @@ async def update_userdata(username: str = Form(...),
 
     info.birthdate = info.birthdate.isoformat()
 
+
+    await send_message(
+        msg={'user_id': user_id, 'action': 'update_user', 'description': description},
+        queue_name=settings.MODEL_QUEUE,
+        exchange_name='users',
+        user_id=user_id,
+        wait_answer=False
+    )
+
     body = {'user_id': user_id, 'action': 'set_user_info', 'new_info': info.model_dump()}
 
-    # try:
     answer = await send_message(body, settings.DB_QUEUE, 'users', user_id, wait_answer=True)
     info: UserInfo = UserInfo.model_validate_json(answer)
     return info
-    # except Exception as exc:
-    #     return {'Error': exc}

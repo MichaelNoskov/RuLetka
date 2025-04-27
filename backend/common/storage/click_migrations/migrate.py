@@ -12,7 +12,7 @@ client = clickhouse_connect.get_client(
 
 client.command('''
 CREATE TABLE IF NOT EXISTS user_vectors (
-    userid UInt64,
+    userid UUID,
     vector Array(Float32)
 ) ENGINE = MergeTree()
 ORDER BY userid

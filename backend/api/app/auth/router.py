@@ -27,14 +27,22 @@ async def register(data: UserRegister) -> UserLogin | dict:
     user_id = str(uuid4())
     msg = {'user_id': user_id, 'action': 'create_user', 'new_user': data.model_dump()}
 
-    # answ = await send_message(msg={'action': 'create_user', 'description': data.description}, queue_name=settings.MODEL_QUEUE, exchange_name='users', user_id=user_id, wait_answer=True)
-
     try:
         answer = await send_message(msg, settings.DB_QUEUE, 'users', user_id, True)
         info: UserLogin = UserLogin.model_validate_json(answer)
-        return info
     except Exception as exc:
         raise HTTPException(status_code=403, detail="Пользователь с таким именем уже существует")
+    
+    user_id = str(info.id)
+
+    await send_message(
+        msg={'user_id': user_id, 'action': 'create_user', 'description': data.description},
+        queue_name=settings.MODEL_QUEUE,
+        exchange_name='users',
+        user_id=user_id,
+        wait_answer=False
+    )
+    return info
 
 
 @router.post("/login")
