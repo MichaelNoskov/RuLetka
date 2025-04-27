@@ -99,7 +99,19 @@ services:
       - ./backend/.env
     restart: unless-stopped
 
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis
+    ports:
+      - "${REDIS_PORT}:${REDIS_PORT}"
+    # volumes:
+    #   - redis_data:/data
+    env_file:
+      - ./backend/.env
+    command: redis-server --requirepass $REDIS_PASSWORD
+
 volumes:
   postgres-data:
   # clickhouse_data:
   clickhouse_log:
+  # redis_data:

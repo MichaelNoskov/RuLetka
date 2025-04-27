@@ -23,13 +23,13 @@ class Settings(BaseSettings):
     CLICKHOUSE_HTTP_PORT: int
     CLICKHOUSE_TCP_PORT: int
 
-    # REDIS_HOST: str = 'redis'
-    # REDIS_PORT: int = 6379
-    # REDIS_DB: int = 0
-    # REDIS_PASSWORD: str = None
-    # REDIS_POOL_MINSIZE: int = 5
-    # REDIS_POOL_MAXSIZE: int = 20
-    # REDIS_TIMEOUT: int = 5
+    REDIS_HOST: str
+    REDIS_PORT: int
+    REDIS_DB: int = 0
+    REDIS_PASSWORD: str
+    REDIS_POOL_MINSIZE: int = 5
+    REDIS_POOL_MAXSIZE: int = 20
+    REDIS_TIMEOUT: int = 5
 
     USER_QUEUE: str = 'user.{user_id}'
     DB_QUEUE: str = 'user_db_ask'
@@ -52,9 +52,9 @@ class Settings(BaseSettings):
     def clickhouse_http_url(self) -> str:
         return f"http://{self.CLICKHOUSE_HOST}:{self.CLICKHOUSE_HTTP_PORT}"
 
-    # @property
-    # def redis_url(self) -> str:
-    #     return f"redis://:{self.REDIS_PASSWORD}@{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
+    @property
+    def redis_url(self) -> str:
+        return f"redis://:{self.REDIS_PASSWORD}@{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
     
     class Config:
         env_file = ".env"
