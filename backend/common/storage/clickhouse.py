@@ -6,12 +6,11 @@ from common.core.config import settings
 
 
 def normalize(vec):
-    # vec = np.array(vec, dtype=np.float32)
-    # norm = np.linalg.norm(vec)
-    # if norm == 0:
-    #     return vec.tolist()
-    # return (vec / norm).tolist()
-    return vec
+    vec = np.array(vec, dtype=np.float32)
+    norm = np.linalg.norm(vec)
+    if norm == 0:
+        return vec.tolist()
+    return (vec / norm).tolist()
 
 class ClickHouseAsyncClient:
     def __init__(self):
@@ -38,44 +37,40 @@ class ClickHouseAsyncClient:
         await self.client.execute(query, data)
 
     async def update_vector(self, userid: str, new_vector: list):
-        
         await self.client.execute(
-            f"ALTER TABLE user_vectors DELETE WHERE userid = '{userid}'",
+            f"ALTER TABLE user_vectors DELETE WHERE userid = '{userid}'"
         )
-
-        update_data = {
-            "userid": userid,
-            "vector": new_vector
-        }
-
-        await self.insert_vector(update_data)
-
+        await self.insert_vector({"userid": userid, "vector": new_vector})
 
     async def get_vector_by_userid(self, userid):
         sql = f"SELECT vector FROM user_vectors WHERE userid = '{userid}'"
-        result = await self.client.fetch_all(sql)
-        return result[0][0] if result else None
+        result = await self.client.fetch(sql)
+        return result[0]["vector"] if result else None
 
     async def get_neighbor(self, userid, threshold=0.5):
         sql_get_vector = f"SELECT vector FROM user_vectors WHERE userid = '{userid}'"
-        result = await self.client.fetch_all(sql_get_vector)
+        result = await self.client.fetch(sql_get_vector)
 
         if not result:
             return None
 
-        user_vector = result[0][0]
+        user_vector = result[0]["vector"]
         query_vec = normalize(user_vector)
         vector_str = "[" + ",".join(map(str, query_vec)) + "]"
 
         sql = f'''
-        SELECT userid, vector,
-               1 - arraySum(arrayMap((x, y) -> x * y, vector, {vector_str})) AS distance
+        SELECT 
+            userid, 
+            vector,
+            1 - arraySum(arrayMap((x, y) -> x * y, vector, {vector_str})) AS distance
         FROM user_vectors
-        WHERE knnMatch(vector, {vector_str}, 'knn_index', 10) AND userid != '{userid}'
+        WHERE 
+            knnMatch(vector, {vector_str}, 'knn_index', 10) AND 
+            userid != '{userid}'
         HAVING distance <= {threshold}
         ORDER BY distance ASC
         LIMIT 5
         '''
         
-        result = await self.client.fetch_all(sql)
+        result = await self.client.fetch(sql)
         return choice(result) if result else None

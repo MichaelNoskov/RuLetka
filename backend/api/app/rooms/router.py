@@ -35,23 +35,28 @@ async def send_user_list(room_id: str):
                     })
                 )
 
-def find_available_room():
-    """Находит свободную комнату (менее 2 участников) или возвращает None."""
-    for room_id, room in rooms.items():
-        if len(room) < 2:
-            return room_id
-    return None
+async def find_available_room(user_id):
+    answer = await send_message({'user_id': user_id, 'action': 'get_user', 'target_user_id': user_id}, settings.MODEL_QUEUE, 'users', user_id, wait_answer=True)
+    vector = np.array(json.loads(answer))
+
+    rooms_id = await VectorStorage.search_rooms(vector)
+
+    if not rooms_id:
+        return None
+
+    room_id = random.choice(rooms_id)
+    await VectorStorage.delete_room(room_id)
+
+    return room_id
 
 async def save_room(user_id):
     answer = await send_message({'user_id': user_id, 'action': 'get_user', 'target_user_id': user_id}, settings.MODEL_QUEUE, 'users', user_id, wait_answer=True)
-    logger.info('==================')
-    logger.info(answer)
-    logger.info('==================')
-    # VectorStorage.save_vector(user_id, np.array(eval(answer)))
+    vector = json.loads(answer)
+    await VectorStorage.save_vector(user_id, np.array(vector))
 
 @router.post('/initiate_connection')
 async def initiate_connection(request: Request, user_id: str = Depends(get_user_id)):
-    room_id = find_available_room()
+    room_id = await find_available_room(user_id)
 
     if not room_id:
         room_id = user_id

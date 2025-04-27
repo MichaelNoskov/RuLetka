@@ -5,5 +5,5 @@ msgpack
 aio-pika
 aiochclient
 aiohttp
-# sentence-transformers
+sentence-transformers
 async_timeout

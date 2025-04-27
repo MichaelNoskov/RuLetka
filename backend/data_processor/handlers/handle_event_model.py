@@ -1,18 +1,16 @@
 from typing import Any, Dict
 
 from common.storage.rabbit import send_answer
-from common.core.config import settings
 from common.storage.clickhouse import ClickHouseAsyncClient
-# from vectorizer import model
-from logger import logger
+from vectorizer import model
+import json
 
 
 async def handle_event_generate_vector(body: Dict[str, Any]) -> None:
 
     user_id = body.get('user_id')
 
-    # vector = model.generate_embedding(str(body.get('description')))
-    vector = [0, 1, 0]
+    vector = model.generate_embedding(str(body.get('description')))
 
     async with ClickHouseAsyncClient() as client:
         await client.insert_vector({'userid': user_id, 'vector': vector})
@@ -22,8 +20,7 @@ async def handle_event_update_vector(body: Dict[str, Any]) -> None:
 
     user_id = body.get('user_id')
 
-    # vector = model.generate_embedding(str(body.get('description')))
-    vector = [0, 2, 0]
+    vector = model.generate_embedding(str(body.get('description')))
 
     async with ClickHouseAsyncClient() as client:
         await client.update_vector(user_id, vector)
@@ -49,5 +46,5 @@ async def handle_event_get_vector(body: Dict[str, Any]) -> None:
 
         vector = await client.get_vector_by_userid(target_user_id)
 
-    logger.info(vector)
+    vector = json.dumps(vector, ensure_ascii=False).encode('utf-8')
     await send_answer(vector if vector else {}, "users", user_id)
