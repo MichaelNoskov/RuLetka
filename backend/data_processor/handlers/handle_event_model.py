@@ -45,12 +45,7 @@ async def handle_event_get_vector(body: Dict[str, Any]) -> None:
     user_id = body.get('user_id')
     target_user_id = body.get('target_user_id')
 
-    async with ClickHouseAsyncClient(
-        host=settings.CLICKHOUSE_HOST,
-        port=settings.CLICKHOUSE_HTTP_PORT,
-        user=settings.CLICKHOUSE_USER,
-        password=settings.CLICKHOUSE_PASSWORD
-    ) as client:
+    async with ClickHouseAsyncClient() as client:
 
         vector = await client.get_vector_by_userid(target_user_id)
 
