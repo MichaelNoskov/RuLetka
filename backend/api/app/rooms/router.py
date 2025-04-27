@@ -43,9 +43,11 @@ def find_available_room():
     return None
 
 async def save_room(user_id):
-    answer = await send_message({'user_id': user_id, 'action': 'get_user', 'target_user_id': user_id}, settings.DB_QUEUE, 'users', user_id, wait_answer=True)
+    answer = await send_message({'user_id': user_id, 'action': 'get_user', 'target_user_id': user_id}, settings.MODEL_QUEUE, 'users', user_id, wait_answer=True)
+    logger.info('==================')
     logger.info(answer)
-    VectorStorage.save_vector(user_id, np.array(eval(answer)))
+    logger.info('==================')
+    # VectorStorage.save_vector(user_id, np.array(eval(answer)))
 
 @router.post('/initiate_connection')
 async def initiate_connection(request: Request, user_id: str = Depends(get_user_id)):

@@ -1,47 +1,46 @@
-import aioredis
+import redis.asyncio as redis
 from common.core.config import settings
 import numpy as np
 from typing import Optional
 
 class RedisManager:
-    _pool = None
+    _client: Optional[redis.Redis] = None
 
     @classmethod
-    async def get_redis(cls):
-        if cls._pool is None:
-            cls._pool = await aioredis.create_redis_pool(
-                settings.redis_url,
-                minsize=settings.REDIS_POOL_MINSIZE,
-                maxsize=settings.REDIS_POOL_MAXSIZE,
-                timeout=settings.REDIS_TIMEOUT,
-                password=settings.REDIS_PASSWORD or None
+    async def get_redis(cls) -> redis.Redis:
+        if cls._client is None:
+            cls._client = redis.Redis(
+                host=settings.redis_url,
+                decode_responses=False,
+                max_connections=settings.REDIS_POOL_MAXSIZE,
+                socket_timeout=settings.REDIS_TIMEOUT
             )
-        return cls._pool
+        return cls._client
 
     @classmethod
     async def close(cls):
-        if cls._pool:
-            cls._pool.close()
-            await cls._pool.wait_closed()
+        if cls._client:
+            await cls._client.close()
+            cls._client = None
 
 
 class VectorStorage:
     @staticmethod
-    async def save_vector(room_id, vector: np.ndarray):
-        redis = await RedisManager.get_redis()
-        
+    async def save_vector(room_id: str, vector: np.ndarray):
+        redis_client = await RedisManager.get_redis()
+
         key = room_id
         vector_bytes = vector.astype(np.float32).tobytes()
-        
-        return await redis.set(key, vector_bytes)
+
+        return await redis_client.set(key, vector_bytes)
 
     @staticmethod
-    async def get_vector(room_id) -> np.ndarray:
-        redis = await RedisManager.get_redis()
+    async def get_vector(room_id: str) -> Optional[np.ndarray]:
+        redis_client = await RedisManager.get_redis()
         key = room_id
-        
-        vector_bytes = await redis.get(key)
-        
+
+        vector_bytes = await redis_client.get(key)
+
         if vector_bytes is None:
             return None
 
@@ -49,7 +48,8 @@ class VectorStorage:
 
     @staticmethod
     async def delete_vector(room_id: str) -> bool:
-        redis = await RedisManager.get_redis()
+        redis_client = await RedisManager.get_redis()
         key = str(room_id)
 
-        return await redis.delete(key) > 0
+        deleted_count = await redis_client.delete(key)
+        return deleted_count > 0

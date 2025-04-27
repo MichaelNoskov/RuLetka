@@ -12,6 +12,7 @@ services:
       - ./backend/.env
     depends_on:
       - db
+      - redis
     volumes:
       - ./backend/common:/app/common
 
@@ -91,6 +92,8 @@ services:
   data_processor:
     build: ./backend/data_processor
     depends_on:
+      rabbitmq:
+        condition: service_healthy
       clickhouse:
         condition: service_healthy
     volumes:
