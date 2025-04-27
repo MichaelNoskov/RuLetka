@@ -1,9 +1,9 @@
 import './styles.css';
 import { genders, countries, appRoutes } from '../../const';
-import { initiateConnection, disconnect } from '../../services/client';
+import { initiateConnection, disconnect, toggleAudioMute, toggleVideoMute } from '../../services/client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, NavLink } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import Grid from '@mui/material/Grid';
@@ -12,6 +12,7 @@ import TextField from '@mui/material/TextField';
 import MenuItem from '@mui/material/MenuItem';
 import IconButton from '@mui/material/IconButton';
 import Button from '@mui/material/Button';
+import Avatar from '@mui/material/Avatar';
 // import Rating from '@mui/material/Rating';
 
 import CallIcon from '@mui/icons-material/Call';
@@ -35,15 +36,15 @@ const theme = createTheme({
 });
 
 const MainPage = function(){
-    const navigate = useNavigate()
-
-    const [form, setForm] = useState({
+    const [searchForm, setSearchForm] = useState({
         country: '',
         is_male: '',
         age: ''
     });    
     
     const [isCalling, setIsCalling] = useState(false);
+    const [IsMuteVideo, SetIsMuteVideo] = useState(false);
+    const [IsMuteAudio, SetIsMuteAudio] = useState(false);
     const localVideoRef = useRef(null);
     const remoteVideoRef = useRef(null);
 
@@ -54,14 +55,14 @@ const MainPage = function(){
 
     const handleChange = (event) => {
         const { name, value } = event.target;
-        setForm(prevForm => ({ ...prevForm, [name]: value }));
+        setSearchForm(prevForm => ({ ...prevForm, [name]: value }));
     };
 
     const handleCallStart = async () => {
         console.log('call start')
         setIsCalling(true);
         try {
-            await initiateConnection();
+            await initiateConnection({ audio: !IsMuteAudio, video: !IsMuteVideo, searchParameters: JSON.stringify(searchForm) });
         } catch (error) {
             console.error("Failed to initiate connection:", error);
             setIsCalling(false);
@@ -72,12 +73,27 @@ const MainPage = function(){
         console.log('call end')
         setIsCalling(false);
         disconnect();
-        // navigate(appRoutes.profile)
     };
   
     const handleSkipNext = () => {
         console.log('call skip')
     };
+
+    useEffect(() => {
+        if (isCalling) {
+            toggleAudioMute(IsMuteAudio);
+        }
+    }, [IsMuteAudio, isCalling]);
+
+    useEffect(() => {
+        if (isCalling) {
+            toggleVideoMute(IsMuteVideo);
+            // const localVideo = document.getElementById('localVideo');
+            // if (localVideo) {
+            //     localVideo.style.display = IsMuteVideo ? 'none' : 'block';
+            // }
+        }
+    }, [IsMuteVideo, isCalling]);
 
     return (
         <ThemeProvider theme={theme}>
@@ -93,10 +109,16 @@ const MainPage = function(){
             <Box className="centered-container">
                 <Box className="aspect-ratio-box">
                     <Box className="video-container-focus">
+                        <Avatar sx={{ bgcolor: '#FFF6EE', width: 350, height: 350, position: 'absolute', zIndex: 1 }}>
+                            <PersonIcon sx={{ color: '#CE9595', fontSize: 250 }} />
+                        </Avatar>
                         <div id="audioContent"></div>
                         <video id="remoteVideo" ref={remoteVideoRef} autoPlay className='video'></video>
                     </Box>
                     <Box className="video-container-mini">
+                        <Avatar sx={{ bgcolor: '#EEF5FF', width: 100, height: 100, position: 'absolute', zIndex: 1  }}>
+                            <PersonIcon sx={{ color: '#9599CE', fontSize: 65 }} />
+                        </Avatar>
                         <video id="localVideo" ref={localVideoRef} autoPlay muted className='video'></video>
                     </Box>
                 </Box>
@@ -111,7 +133,7 @@ const MainPage = function(){
                                     <TextField 
                                         name="country"
                                         onChange={handleChange}
-                                        value={form.country}
+                                        value={searchForm.country}
                                         className="text-field"
                                         label="Страна"
                                         size="small"
@@ -128,7 +150,7 @@ const MainPage = function(){
                                     <TextField
                                         name="is_male"
                                         onChange={handleChange}
-                                        value={form.is_male}
+                                        value={searchForm.is_male}
                                         className="text-field"
                                         label="Пол"
                                         size="small"
@@ -151,7 +173,7 @@ const MainPage = function(){
                                                 handleChange(e);
                                             }
                                         }}
-                                        value={form.age}
+                                        value={searchForm.age}
                                         className="text-field"
                                         label="Возраст"
                                         size="small"
@@ -165,8 +187,6 @@ const MainPage = function(){
                             </Grid>
                         </Box>
                     </Grid>
-
-
 
                     <Grid size={4}>       
                         <Box className="buttons-box">
@@ -199,41 +219,65 @@ const MainPage = function(){
                                     </IconButton>
                                 </>
                             )}
+
                             <IconButton
                                 className="control-button"
-                                sx={{ backgroundColor: '#D6D6DA', '&:hover': {backgroundColor: '#B5B5BA'} }}
-                            >
-                                <NoPhotographyIcon sx={{ color: '#565967', fontSize: 25 }}/>
+                                onClick={() => SetIsMuteVideo(!IsMuteVideo)}
+                                sx={{
+                                    backgroundColor: IsMuteVideo ? '#D54D4D' : '#D6D6DA',
+                                    '&:hover': {
+                                    backgroundColor: IsMuteVideo ? '#B41B1B' : '#B5B5BA',
+                                    },
+                                }}
+                                >
+                                <NoPhotographyIcon
+                                    sx={{
+                                    color: IsMuteVideo ? '#FFFFFF' : '#565967',
+                                    fontSize: 25,
+                                    }}
+                                />
                             </IconButton>
 
                             <IconButton
                                 className="control-button"
-                                sx={{ backgroundColor: '#D6D6DA', '&:hover': {backgroundColor: '#B5B5BA'} }}
-                            >
-                                <MicOffIcon sx={{ color: '#565967', fontSize: 25 }}/>
+                                onClick={() => SetIsMuteAudio(!IsMuteAudio)}
+                                sx={{
+                                    backgroundColor: IsMuteAudio ? '#D54D4D' : '#D6D6DA',
+                                    '&:hover': {
+                                    backgroundColor: IsMuteAudio ? '#B41B1B' : '#B5B5BA',
+                                    },
+                                }}
+                                >
+                                <MicOffIcon
+                                    sx={{
+                                    color: IsMuteAudio ? '#FFFFFF' : '#565967',
+                                    fontSize: 25,
+                                    }}
+                                />
                             </IconButton>
                         </Box>
                     </Grid>
 
                     <Grid size={4}>
                         <Box className="profile-params-box">
-                            {!isCalling ? (
-                                <NavLink to={appRoutes.profile}>
-                                    <Button
-                                        variant="outlined"
-                                        startIcon={<PersonIcon/>}
-                                        color='secondary'
-                                        disabled={isCalling}
-                                        sx={{
-                                            fontSize: '20px',
-                                            fontWeight: 'bold',
-                                            padding: '20px',
-                                        }}
-                                    >Профиль</Button>
-                                </NavLink>
-                            ) : (
-                                <></>
-                            )}
+                            <NavLink
+                                to={appRoutes.profile}
+                                style={isCalling ? { pointerEvents: 'none' } : {}}
+                                tabIndex={isCalling ? -1 : 0}
+                                aria-disabled={isCalling ? "true" : "false"}
+                            >
+                                <Button
+                                    variant="outlined"
+                                    startIcon={<PersonIcon/>}
+                                    color='secondary'
+                                    disabled={isCalling}
+                                    sx={{
+                                        fontSize: '20px',
+                                        fontWeight: 'bold',
+                                        padding: '20px',
+                                    }}
+                                >Профиль</Button>
+                            </NavLink>
                         </Box>
                     </Grid>
                 </Grid>

@@ -6,7 +6,8 @@ export const appRoutes = {
 }
 
 export const URLs = {
-    backendHost: 'http://192.168.123.138:8000',
+    backendHost: 'http://localhost:8000',
+    imageURL: '/static/img-'
 }
 
 export const genders = [

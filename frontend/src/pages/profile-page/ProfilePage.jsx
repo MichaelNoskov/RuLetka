@@ -4,6 +4,8 @@ import mouse from '../../static/mouse.jpg'
 
 import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchUser, setUser } from '../../store/userSlice';
 
 import { createTheme, ThemeProvider, styled } from '@mui/material/styles';
 import Container from '@mui/material/Container';
@@ -33,7 +35,12 @@ const theme = createTheme({
     },
 });
 
-const Item = styled(Card)(({ theme }) => ({
+const getBackgroundImage = (value) => {
+    const url = `/static/img-${value}.jpg`;
+    return url;
+};
+
+const Item = styled(Card)(({ theme, bgimage }) => ({
     position: 'relative',
     padding: theme.spacing(1),
     textAlign: 'start',
@@ -48,10 +55,10 @@ const Item = styled(Card)(({ theme }) => ({
         left: 0,
         width: '100%',
         height: '100%',
-        backgroundImage: `url(${mouse})`,
+        backgroundImage: `url(${bgimage}), url(${mouse})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        filter: 'brightness(0.6)',
+        filter: 'brightness(0.5)',
         zIndex: 0,
         borderRadius: theme.shape.borderRadius,
       },
@@ -69,14 +76,28 @@ const InterestsHitbox = styled('div')({
     width: '100%',
     height: '100%',
     cursor: 'pointer',
-    zIndex: 2,
-  });
+    zIndex: 3,
+});
 
 export default function ProfilePage() {
     const navigate = useNavigate()
+    const dispatch = useDispatch();
+    const user = useSelector((state) => state.user.data);
+    const status = useSelector((state) => state.user.status);
 
-    const [selectedInterests, setSelectedInterests] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [selectedInterests, setSelectedInterests] = useState(user?.selectedInterests || []);
+    const [form, setForm] = useState(user || {});
+    const [formInitial, setFormInitial] = useState(user || {});
+
+    useEffect(() => {
+        if (!user && status === 'idle') {
+            dispatch(fetchUser());
+        } else if (user) {
+            setForm(user);
+            setFormInitial(user);
+            setSelectedInterests(user.selectedInterests || []);
+        }
+    }, [dispatch, user, status]);
 
     const toggleInterest = (value) => {
         setSelectedInterests((prev) =>
@@ -84,35 +105,12 @@ export default function ProfilePage() {
         );
     };
 
-    const [form, setForm] = useState({
-        username: '',
-        is_male: '',
-        birthdate: '',
-        country: '',
-        description: '',
-    });
-
-    const [formInitial, setFormInitial] = useState({
-        username: '',
-        is_male: '',
-        birthdate: '',
-        country: '',
-        description: '',
-    });
-
     const handleChange = (event) => {
         const { name, value } = event.target;
         setForm(prevForm => ({ ...prevForm, [name]: value }));
     };
 
     async function handleLogout() {
-        const formData = new FormData();
-        formData.append('username', form.username);
-        formData.append('is_male', form.is_male);
-        formData.append('birthdate', form.birthdate);
-        formData.append('country', form.country);
-        formData.append('description', form.description);
-
         console.log('clear user')
 
         try {
@@ -143,11 +141,12 @@ export default function ProfilePage() {
         formData.append('birthdate', form.birthdate);
         formData.append('country', form.country);
         formData.append('description', form.description);
+        // formData.append('interests', JSON.stringify(selectedInterests));
 
-        console.log('save changes attempt:', {formData})
+        console.log(form)
 
         try {
-            const response = await fetch(`${URLs.backendHost}/api/user`, {
+            const response = await fetch(`${URLs.backendHost}/api/user/`, {
                 method: 'POST',
                 body: formData,
                 credentials: 'include',
@@ -158,7 +157,8 @@ export default function ProfilePage() {
             if (!response.ok) {
                 throw new Error(data.detail || 'Ошибка при изменении');
             }
-            setFormInitial({ ...form });
+            dispatch(setUser({...form, selectedInterests}));
+            setFormInitial({ ...form, selectedInterests });
 
         } catch (err) {
             console.log(err);
@@ -187,10 +187,11 @@ export default function ProfilePage() {
                     birthdate: data.birthdate || '',
                     country: data.country || '',
                     description: data.description || '',
+                    // selectedInterests: data.interests || [], 
                 };
                 setForm(userData)
                 setFormInitial(userData)
-                setIsLoading(false)
+                // setSelectedInterests(data.interests || [])
 
                 // Assuming interests are returned in the userData
                 // You might need to adjust this part based on your API response
@@ -201,8 +202,22 @@ export default function ProfilePage() {
             }
         };
 
-        fetchUserData();
+        fetchUserData()
     }, []);
+
+    function arraysEqual(a, b) {
+        if (a === b) return true;
+        if (a == null || b == null) return false;
+        if (a.length !== b.length) return false;
+      
+        const aSorted = [...a].sort();
+        const bSorted = [...b].sort();
+      
+        for (let i = 0; i < aSorted.length; ++i) {
+          if (aSorted[i] !== bSorted[i]) return false;
+        }
+        return true;
+    }
 
     const hasChanges = () => {
         return (
@@ -210,7 +225,8 @@ export default function ProfilePage() {
           form.is_male !== formInitial.is_male ||
           form.birthdate !== formInitial.birthdate ||
           form.country !== formInitial.country ||
-          form.description !== formInitial.description
+          form.description !== formInitial.description ||
+          !arraysEqual(selectedInterests, formInitial.selectedInterests)
         );
     };
 
@@ -259,7 +275,7 @@ export default function ProfilePage() {
                         <Box className="personal-container">
                             <p className="interests-title">Сведения</p>
 
-                            {isLoading ? (  // Show skeletons if loading
+                            {status === 'loading' ? (  // Show skeletons if loading
                                 <>
                                     <Skeleton variant="rectangular" width={290} height={40} />
                                     <Skeleton variant="rectangular" width={290} height={40} />
@@ -341,8 +357,9 @@ export default function ProfilePage() {
                             <p className="interests-title">Ваши интересы</p>
                             <div className="interests-wrapper">
                                 {interests.map((option) => {
+                                const bgImage = getBackgroundImage(option.value)
                                 return (
-                                    <Item key={option.value} style={{ cursor: 'pointer' }}>
+                                    <Item key={option.value} bgimage={bgImage} style={{ cursor: 'pointer' }}>
                                     <FormControlLabel
                                         control={
                                         <Checkbox

@@ -1,19 +1,15 @@
-// client.js (Review the renegotiation part to avoid m-line errors)
-
 import { URLs } from "../const";
 
 var pc = null;
 var localStream = null;
 var audioBlock = document.getElementById("audioContent");
-// var connectButton = document.getElementById("connect");
-// var disconnectButton = document.getElementById("disconnect");
 // var statusText = document.getElementById("status");
 // var usersList = document.getElementById("users");
 // var roomIDInput = document.getElementById("roomID");
-var emptySound = true;
+// var emptySound = true;
 var statsIntervalId = null;
 let previousStats = {};
-let room_id = null;
+// let room_id = null;
 
 async function startStats() {
     if (!pc) return;
@@ -25,20 +21,20 @@ async function startStats() {
                     const currentPacketsLost = report.packetsLost;
                     const currentPacketsReceived = report.packetsReceived;
                     const ssrc = report.ssrc;
-                    const jitter = report.jitter;
+                    // const jitter = report.jitter;
                     const bytesReceived = report.bytesReceived;
                     if (previousStats[ssrc]) {
                         const previousPacketsLost = previousStats[ssrc].packetsLost;
                         const previousPacketsReceived = previousStats[ssrc].packetsReceived;
-                        const previousBytesReceived = previousStats[ssrc].bytesReceived;
+                        // const previousBytesReceived = previousStats[ssrc].bytesReceived;
                         const packetsLostDelta = currentPacketsLost - previousPacketsLost;
                         const packetsReceivedDelta = currentPacketsReceived - previousPacketsReceived;
-                        const bytesReceivedDelta = bytesReceived - previousBytesReceived
+                        // const bytesReceivedDelta = bytesReceived - previousBytesReceived
                         const totalPacketsDelta = packetsLostDelta + packetsReceivedDelta;
-                        let packetLossPercentage = 0;
+                        // let packetLossPercentage = 0;
                         if (totalPacketsDelta > 0) {
-                            packetLossPercentage = (packetsLostDelta / totalPacketsDelta) * 100;
-                            const bitrate = bytesReceivedDelta * 8 / 1000;
+                            // packetLossPercentage = (packetsLostDelta / totalPacketsDelta) * 100;
+                            // const bitrate = bytesReceivedDelta * 8 / 1000;
                             // statusText.textContent = `[Inbound Audio] Packet Loss: ${packetLossPercentage.toFixed(2)}%, Jitter: ${jitter}, Bitrate: ${bitrate} kbps`;
                             previousStats[ssrc] = {
                                 packetsLost: currentPacketsLost,
@@ -51,19 +47,19 @@ async function startStats() {
                     const currentPacketsLost = report.packetsLost;
                     const currentPacketsSent = report.packetsSent;
                     const ssrc = report.ssrc;
-                    const bytesSent = report.bytesSent;
+                    // const bytesSent = report.bytesSent;
                     if (previousStats[ssrc]) {
                         const previousPacketsLost = previousStats[ssrc].packetsLost;
                         const previousPacketsSent = previousStats[ssrc].packetsSent;
-                        const previousBytesSent = previousStats[ssrc].bytesSent;
+                        // const previousBytesSent = previousStats[ssrc].bytesSent;
                         const packetsLostDelta = currentPacketsLost - previousPacketsLost;
                         const packetsSentDelta = currentPacketsSent - previousPacketsSent;
-                        const bytesSentDelta = bytesSent - previousBytesSent
+                        // const bytesSentDelta = bytesSent - previousBytesSent
                         const totalPacketsDelta = packetsLostDelta + packetsSentDelta;
-                        let packetLossPercentage = 0;
+                        // let packetLossPercentage = 0;
                         if (totalPacketsDelta > 0) {
-                            packetLossPercentage = (packetsLostDelta / totalPacketsDelta) * 100;
-                            const bitrate = bytesSentDelta * 8 / 1000;
+                            // packetLossPercentage = (packetsLostDelta / totalPacketsDelta) * 100;
+                            // const bitrate = bytesSentDelta * 8 / 1000;
                             // statusText.textContent = `[Outbound Audio] Packet Loss: ${packetLossPercentage.toFixed(2)}%, Bitrate: ${bitrate} kbps`;
                             previousStats[ssrc] = {
                                 packetsLost: report.packetsLost,
@@ -84,12 +80,30 @@ function stopStats() {
     clearInterval(statsIntervalId);
 }
 
-export async function initiateConnection() {
+export function toggleAudioMute(mute) {
+    if (localStream) {
+        localStream.getAudioTracks().forEach(track => {
+            track.enabled = !mute;
+        });
+        console.log(`Audio tracks are now ${mute ? 'muted' : 'unmuted'}`);
+    }
+}
+
+export function toggleVideoMute(mute) {
+    if (localStream) {
+        localStream.getVideoTracks().forEach(track => {
+            track.enabled = !mute;
+        });
+        console.log(`Video tracks are now ${mute ? 'muted' : 'unmuted'}`);
+    }
+}
+
+export async function initiateConnection({ audio = true, video = true, searchParameters}) {
+    console.log(searchParameters)
+
     try {
-        // connectButton.style.visibility = 'hidden';
-        // disconnectButton.style.visibility = 'visible';
         // statusText.textContent = 'Создаём соединение'
-        localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+        localStream = await navigator.mediaDevices.getUserMedia({ audio, video });
         console.log(localStream);
 
         document.getElementById('localVideo').srcObject = localStream;
@@ -108,14 +122,24 @@ export async function initiateConnection() {
                 audioElement.autoplay = true;
                 audioBlock.appendChild(audioElement);
                 audioElement.load();
-                emptySound = false;
+                // emptySound = true;
                 console.log(`Received track (${evt.track.kind})`);
+            }
+        });
+
+        // Detect connection state changes to identify interlocutor disconnect
+        pc.addEventListener('connectionstatechange', () => {
+            if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
+                console.log('connection break');
+                disconnect();
+                initiateConnection();
             }
         });
         pc.ondatachannel = (event) => {
             const receiveChannel = event.channel;
             receiveChannel.onopen = () => {
                 console.log("Data channel is open!");
+
             };
             receiveChannel.onmessage = async (event) => {
                 let info;
@@ -140,7 +164,12 @@ export async function initiateConnection() {
                 } else if (info.action === 'answer') {
                     console.log(`Received negotiating answer from sever`);
                     // statusText.textContent = 'Получен ответ на оффер для пересогласования'
-                    await pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(event.data)));
+                    try {
+                        await pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(event.data)));
+                    } catch (error) {
+                        console.error(error)
+                    }
+
                 } else if (info.action === 'users') {
                     console.log(info.users)
                     // usersList.innerHTML = ''
@@ -157,9 +186,10 @@ export async function initiateConnection() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-            },            
+            },
             credentials: 'include',
         });
+
         const offerData = await response.json();
         console.log('Server offer asked')
         // statusText.textContent = 'Получен оффер на соединение'
@@ -214,10 +244,8 @@ export async function disconnect() {
         localStream = null;
 
         document.getElementById('localVideo').srcObject = null;
-        audioBlock.innerHTML = '';
+        // audioBlock.innerHTML = '';
         // statusText.textContent = 'Отключено';
-        // connectButton.style.visibility = 'visible';
-        // disconnectButton.style.visibility = 'hidden';
     }
 }
 
@@ -231,3 +259,4 @@ function stop() {
         audioBlock.innerHTML = '';
     }
 }
+
