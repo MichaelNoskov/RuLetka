@@ -73,7 +73,7 @@ const MainPage = function(){
         setIsCalling(true);
         try {
             const searchParameters = prepareSearchParameters(searchForm);
-            await initiateConnection({ audio: !IsMuteAudio, video: !IsMuteVideo, searchParameters: JSON.stringify(searchParameters) });
+            await initiateConnection({ audio: !IsMuteAudio, video: !IsMuteVideo, searchParameters: searchParameters });
         } catch (error) {
             console.error("Failed to initiate connection:", error);
             setIsCalling(false);
