@@ -4,8 +4,6 @@ import mouse from '../../static/mouse.jpg'
 
 import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
-import { fetchUser, setUser } from '../../store/userSlice';
 
 import { createTheme, ThemeProvider, styled } from '@mui/material/styles';
 import Container from '@mui/material/Container';
@@ -81,23 +79,21 @@ const InterestsHitbox = styled('div')({
 
 export default function ProfilePage() {
     const navigate = useNavigate()
-    const dispatch = useDispatch();
-    const user = useSelector((state) => state.user.data);
-    const status = useSelector((state) => state.user.status);
 
-    const [selectedInterests, setSelectedInterests] = useState(user?.selectedInterests || []);
-    const [form, setForm] = useState(user || {});
-    const [formInitial, setFormInitial] = useState(user || {});
+    const [selectedInterests, setSelectedInterests] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        if (!user && status === 'idle') {
-            dispatch(fetchUser());
-        } else if (user) {
-            setForm(user);
-            setFormInitial(user);
-            setSelectedInterests(user.selectedInterests || []);
-        }
-    }, [dispatch, user, status]);
+    const [form, setForm] = useState({
+        country: '',
+        is_male: '',
+        age: ''
+    });
+
+    const [formInitial, setFormInitial] = useState({
+        country: '',
+        is_male: '',
+        age: ''
+    });
 
     const toggleInterest = (value) => {
         setSelectedInterests((prev) =>
@@ -157,8 +153,7 @@ export default function ProfilePage() {
             if (!response.ok) {
                 throw new Error(data.detail || 'Ошибка при изменении');
             }
-            dispatch(setUser({...form, selectedInterests}));
-            setFormInitial({ ...form, selectedInterests });
+            setFormInitial({ ...form });
 
         } catch (err) {
             console.log(err);
@@ -189,8 +184,10 @@ export default function ProfilePage() {
                     description: data.description || '',
                     // selectedInterests: data.interests || [], 
                 };
+
                 setForm(userData)
                 setFormInitial(userData)
+                setIsLoading(false)
                 // setSelectedInterests(data.interests || [])
 
                 // Assuming interests are returned in the userData
@@ -275,7 +272,7 @@ export default function ProfilePage() {
                         <Box className="personal-container">
                             <p className="interests-title">Сведения</p>
 
-                            {status === 'loading' ? (  // Show skeletons if loading
+                            {isLoading ? (  // Show skeletons if loading
                                 <>
                                     <Skeleton variant="rectangular" width={290} height={40} />
                                     <Skeleton variant="rectangular" width={290} height={40} />
