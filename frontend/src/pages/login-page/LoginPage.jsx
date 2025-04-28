@@ -9,7 +9,7 @@ import Stack from '@mui/material/Stack';
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
-
+import Alert from '@mui/material/Alert';
 
 
 const theme = createTheme({
@@ -23,15 +23,21 @@ const theme = createTheme({
 export default function LoginPage() {
     const navigate = useNavigate()
     const [isSubmitting, setIsSubmitting] = useState(false);
-
-    const [username, setUsername] = useState('');
-    const handleUsernameChange = (event) => setUsername(event.target.value);
-    const [password, setPassword] = useState('');
-    const handlePasswordChange = (event) => setPassword(event.target.value);
     const [error, setError] = useState();
 
+    const [form, setForm] = useState({
+        username: '',
+        password: '',
+    });
+
+    const handleChange = (event) => {
+        const { name, value } = event.target;
+        setForm(prevForm => ({ ...prevForm, [name]: value }));
+        setIsSubmitting(false);
+    };
+
     function validateForm() {
-        if (!username || !password) {
+        if (!form.username || !form.password) {
             setError('Пожалуйста, заполните все поля');
             return false;
         }
@@ -50,8 +56,8 @@ export default function LoginPage() {
 
         try {
             const formData = new URLSearchParams();
-            formData.append('username', username);
-            formData.append('password', password);
+            formData.append('username', form.username);
+            formData.append('password', form.password);
 
             const response = await fetch(`${URLs.backendHost}/auth/login`, {
                 method: 'POST',
@@ -87,16 +93,18 @@ export default function LoginPage() {
                 <Box className="login-container">
                     <p className="title">Вход в систему</p>
                     <TextField
-                        onChange={handleUsernameChange}
-                        value={username}
+                        name="username"
+                        onChange={handleChange}
+                        value={form.username}
                         className="text-field"
                         label="Логин"
                         size="small"
                         error={error}
                     />
                     <TextField
-                        onChange={handlePasswordChange}
-                        value={password}
+                        name="password"
+                        onChange={handleChange}
+                        value={form.password}
                         className="text-field"
                         label="Пароль"
                         size="small"
@@ -104,7 +112,11 @@ export default function LoginPage() {
                         error={error}
                     />
 
-                    {error && <p style={{ color: 'red', margin: 0}}>{error}</p>}
+                    {error && (
+                    <Alert severity="error" sx={{ marginTop: '0px' }}>
+                        {error}
+                    </Alert>
+                    )}
 
                     <Button
                         className="login-button"

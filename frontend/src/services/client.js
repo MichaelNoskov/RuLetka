@@ -3,13 +3,6 @@ import { URLs } from "../const";
 var pc = null;
 var localStream = null;
 var audioBlock = document.getElementById("audioContent");
-// var statusText = document.getElementById("status");
-// var usersList = document.getElementById("users");
-// var roomIDInput = document.getElementById("roomID");
-// var emptySound = true;
-var statsIntervalId = null;
-let previousStats = {};
-// let room_id = null;
 
 
 export function toggleAudioMute(mute) {

@@ -2,6 +2,7 @@ import './styles.css';
 import { appRoutes, genders, countries, URLs } from '../../const';
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import Stack from '@mui/material/Stack';
@@ -9,7 +10,7 @@ import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import MenuItem from '@mui/material/MenuItem';
-import { useNavigate } from 'react-router-dom';
+import Alert from '@mui/material/Alert';
 
 
 const theme = createTheme({
@@ -43,6 +44,7 @@ export default function RegisterPage() {
     const handleChange = (event) => {
         const { name, value } = event.target;
         setForm(prevForm => ({ ...prevForm, [name]: value }));
+        setIsSubmitting(false);
     };
 
     function checkError(condition, field, message) {
@@ -108,14 +110,6 @@ export default function RegisterPage() {
 
         setIsSubmitting(true);
         console.log('registration attempt')
-
-        console.log(JSON.stringify({
-            username: form.username,
-            password: form.password,
-            is_male: form.is_male,
-            birthdate: form.birthdate,
-            country: form.country,
-        }))
 
         try {
             const response = await fetch(`${URLs.backendHost}/auth/register`, {
@@ -196,7 +190,7 @@ export default function RegisterPage() {
                         size="small"
                         select
                     >
-                        {genders.map((option) => (
+                        {genders.slice(1).map((option) => (
                             <MenuItem key={option.value} value={option.value}>
                                 {option.label}
                             </MenuItem>
@@ -223,7 +217,7 @@ export default function RegisterPage() {
                         size="small"
                         select
                     >
-                        {countries.map((option) => (
+                        {countries.slice(1).map((option) => (
                             <MenuItem key={option.value} value={option.value}>
                                 {option.label}
                             </MenuItem>
@@ -231,11 +225,11 @@ export default function RegisterPage() {
                     </TextField>
 
                     {errors.general && (
-                        <p style={{ color: 'red', margin: 0 }}>
-                            {typeof errors.general === 'string'
+                    <Alert severity="error" sx={{ marginTop: '0px' }}>
+                        {typeof errors.general === 'string'
                             ? errors.general
                             : errors.general?.message || JSON.stringify(errors.general)}
-                        </p>
+                    </Alert>
                     )}
                     
                     <Button

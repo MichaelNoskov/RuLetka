@@ -48,11 +48,15 @@ const MainPage = function(){
         age: ''
     });
 
-    const prepareSearchParameters = (form) => ({
-        country: form.country || null,
-        is_male: form.is_male !== '' ? form.is_male : null,
-        age: form.age !== '' ? parseInt(form.age, 10) : null
-      });
+    const prepareSearchParameters = (form) => {
+        const formData = new FormData();
+    
+        if (form.country && form.country !== '') {formData.append('country', form.country);}    
+        if (form.is_male !== '') {formData.append('is_male', form.is_male);}
+        if (form.age !== '') {formData.append('age', parseInt(form.age, 10));}
+    
+        return formData;
+    };
 
     useEffect(() => {
         window.localVideo = document.getElementById('localVideo');
