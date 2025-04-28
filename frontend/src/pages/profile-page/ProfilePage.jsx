@@ -82,6 +82,7 @@ const InterestsHitbox = styled('div')({
 export default function ProfilePage() {
     const navigate = useNavigate()
     const [selectedInterests, setSelectedInterests] = useState([]);
+    const [selectedInterestsInitial, setSelectedInterestsInitial] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [saveLoading, setSaveLoading] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
@@ -151,8 +152,6 @@ export default function ProfilePage() {
         formData.append('description', form.description);
         // formData.append('interests', JSON.stringify(selectedInterests));
 
-        console.log(form)
-
         try {
             const response = await fetch(`${URLs.backendHost}/api/user/`, {
                 method: 'POST',
@@ -167,6 +166,7 @@ export default function ProfilePage() {
             }
 
             setFormInitial({ ...form });
+            setSelectedInterestsInitial(selectedInterests);
             setSaveSuccess(true);
             setTimeout(() => setSaveSuccess(false), 2000);
         } catch (err) {
@@ -236,7 +236,7 @@ export default function ProfilePage() {
           form.birthdate !== formInitial.birthdate ||
           form.country !== formInitial.country ||
           form.description !== formInitial.description ||
-          !arraysEqual(selectedInterests, formInitial.selectedInterests)
+          !arraysEqual(selectedInterests, selectedInterestsInitial)
         );
     };
 
