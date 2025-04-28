@@ -1,0 +1,23 @@
+body {
+  background-color: #E0E0E0;
+  font-family: Roboto, sans-serif;
+}
+
+.not-found-container {
+  background-color: #FAFAFA;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  width: 350px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #000000;
+  text-align: center;
+  margin: 0;
+}
