@@ -124,6 +124,22 @@ services:
     stdin_open: true
     tty: true
 
+  minio:
+    image: quay.io/minio/minio
+    command: server --console-address ":${MINIO_PORT}" /data
+    env_file:
+      - ./backend/.env
+    expose:
+      - "${MINIO_API_PORT}"
+      - "${MINIO_PORT}"
+    ports:
+       - "${MINIO_API_PORT}:${MINIO_API_PORT}"
+       - "${MINIO_PORT}:${MINIO_PORT}"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 volumes:
   # postgres-data:

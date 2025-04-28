@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Form
+from fastapi import APIRouter, Depends, Form, UploadFile, File
 from common.schemas.hobbies import HobbySchema, HobbyCreate, HobbyList
 from common.schemas.user import UserInfo
 from common.storage.rabbit import send_message
@@ -6,6 +6,7 @@ from uuid import uuid4
 from app.utils import get_user_id
 from pydantic.types import PastDate
 from common.core.config import settings
+from common.storage.minio_util import upload_image
 
 router = APIRouter()
 
@@ -13,7 +14,13 @@ router = APIRouter()
 @router.post("/hobbies/")
 async def create_hobby(
     hobby: HobbyCreate,
+    file: UploadFile = File(...)
 ) -> HobbySchema | dict:
+    
+    contents = await file.read()  # читаем содержимое файла в bytes
+    await upload_image(file.filename, contents)
+
+    hobby.image = file.filename
 
     user_id = str(uuid4())
     body = {'user_id': user_id, 'action': 'create_hobby', 'new_hobby': hobby.model_dump()}

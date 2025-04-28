@@ -15,3 +15,4 @@ aiortc
 numpy
 redisearch
 redis>=5.0.0
+minio

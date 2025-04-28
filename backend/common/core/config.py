@@ -32,6 +32,13 @@ class Settings(BaseSettings):
     REDIS_POOL_MAXSIZE: int = 20
     REDIS_TIMEOUT: int = 5
 
+    MINIO_PORT: int
+    MINIO_API_PORT: int
+    MINIO_ENDPOINT: str
+    MINIO_ROOT_USER: str
+    MINIO_ROOT_PASSWORD: str
+    MINIO_BUCKET: str
+
     USER_QUEUE: str = 'user.{user_id}'
     DB_QUEUE: str = 'user_db_ask'
     MODEL_QUEUE: str = 'user_click_ask'
