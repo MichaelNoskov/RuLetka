@@ -1,7 +1,10 @@
-from fastapi import APIRouter, Request, Depends
+from fastapi import APIRouter, Request, Depends, Body
 from fastapi.responses import JSONResponse
 from aiortc import RTCPeerConnection, RTCSessionDescription, MediaStreamTrack
 from aiortc.contrib.media import MediaRelay
+from pydantic.types import PastDate
+from datetime import date
+from common.schemas.user import UserInfo
 import json
 import random
 from app.utils import get_user_id
@@ -35,16 +38,20 @@ async def send_user_list(room_id: str):
                     })
                 )
 
-async def find_available_room(user_id):
+async def find_available_room(user_id, gender=None, age=None, country=None):
     answer = await send_message({'user_id': user_id, 'action': 'get_user', 'target_user_id': user_id}, settings.MODEL_QUEUE, 'users', user_id, wait_answer=True)
     vector = np.array(json.loads(answer))
 
-    rooms_id = await VectorStorage.search_rooms(vector)
+    rooms_id = await VectorStorage.search_rooms(vector, gender=str(gender) if gender else gender, age=age, country=country)
 
     if not rooms_id:
         return None
 
     room_id = random.choice(rooms_id)
+    if room_id not in rooms:
+        await VectorStorage.delete_room(room_id)
+        return find_available_room(user_id, gender, age, country)
+
     await VectorStorage.delete_room(room_id)
 
     return room_id
@@ -52,10 +59,21 @@ async def find_available_room(user_id):
 async def save_room(user_id):
     answer = await send_message({'user_id': user_id, 'action': 'get_user', 'target_user_id': user_id}, settings.MODEL_QUEUE, 'users', user_id, wait_answer=True)
     vector = json.loads(answer)
-    await VectorStorage.save_vector(user_id, np.array(vector))
+
+    answer = await send_message({'user_id': user_id, 'action': 'get_user_info'}, settings.DB_QUEUE, 'users', user_id, wait_answer=True)
+    user: UserInfo = UserInfo.model_validate_json(answer)
+
+    today = date.today()
+    age = today.year - user.birthdate.year
+    if (today.month, today.day) < (user.birthdate.month, user.birthdate.day):
+        age -= 1
+
+    await VectorStorage.save_vector(user_id, np.array(vector), str(user.is_male), age, user.country)
 
 @router.post('/initiate_connection')
-async def initiate_connection(request: Request, user_id: str = Depends(get_user_id)):
+async def initiate_connection(
+    user_id: str = Depends(get_user_id)
+):
     room_id = await find_available_room(user_id)
 
     if not room_id:

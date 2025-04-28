@@ -114,7 +114,7 @@ services:
     command: redis-server --requirepass $REDIS_PASSWORD
 
 volumes:
-  postgres-data:
+  # postgres-data:
   # clickhouse_data:
   clickhouse_log:
   # redis_data:

@@ -1,7 +1,8 @@
 import redis.asyncio as redis
 from common.core.config import settings
 import numpy as np
-from typing import List
+from typing import List, Tuple, Optional
+from logger import logger
 
 class RedisManager:
     _client = None
@@ -21,11 +22,25 @@ class VectorStorage:
     PREFIX = "vector:"
 
     @staticmethod
-    async def save_vector(room_id: str, vector: np.ndarray):
+    async def save_vector(
+        room_id: str,
+        vector: np.ndarray,
+        gender: str,
+        age: int,
+        country: str
+    ):
+        """Сохраняет вектор и метаданные в Redis Hash"""
         redis_client = await RedisManager.get_redis()
-        await redis_client.set(
+        
+        await redis_client.hset(
             f"{VectorStorage.PREFIX}{room_id}",
-            vector.astype(np.float32).tobytes()
+            mapping={
+                "vector": vector.astype(np.float32).tobytes(),
+                "gender": gender,
+                "age": str(age),
+                "country": country,
+                "room_id": room_id
+            }
         )
 
     @staticmethod
@@ -35,7 +50,7 @@ class VectorStorage:
 
     @staticmethod
     def cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
-        """Собственная реализация косинусного сходства"""
+        """Вычисление косинусного сходства"""
         dot_product = np.dot(a, b)
         norm_a = np.linalg.norm(a)
         norm_b = np.linalg.norm(b)
@@ -45,29 +60,55 @@ class VectorStorage:
     async def search_rooms(
         query_vector: np.ndarray,
         top_k: int = 3,
-        similarity_threshold: float = 0.5
-    ) -> List[tuple[str, float]]:
+        similarity_threshold: float = 0.1,
+        gender: Optional[str] = None,
+        age: Optional[int] = None,
+        country: Optional[str] = None
+    ) -> List[Tuple[str, float, str, int, str]]:
+        """
+        Возвращает отфильтрованные результаты:
+        (room_id, similarity, gender, age, country)
+        """
         redis_client = await RedisManager.get_redis()
         
-        # Получаем все ключи
         keys = await redis_client.keys(f"{VectorStorage.PREFIX}*")
-        
-        # Загружаем вектора
-        vectors = {}
-        for key in keys:
-            vector_bytes = await redis_client.get(key)
-            vectors[key.decode()] = np.frombuffer(vector_bytes, dtype=np.float32)
-        
-        # Преобразуем запрос
+        results = []
         query = query_vector.astype(np.float32).flatten()
         
-        # Вычисляем сходства
-        similarities = []
-        for key, vector in vectors.items():
-            similarity = VectorStorage.cosine_similarity(query, vector.flatten())
+        for key in keys:
+            data = await redis_client.hgetall(key)
+            
+            # Парсинг данных
+            vector = np.frombuffer(data[b"vector"], dtype=np.float32)
+            room_gender = data[b"gender"].decode()
+            room_age = int(data[b"age"])
+            room_country = data[b"country"].decode()
+            room_id = data[b"room_id"].decode()
+
+            logger.info(f'{room_gender}, {gender}')
+            logger.info(f'{room_age}, {age}')
+            logger.info(f'{room_country}, {country}')
+            # Фильтрация
+            if gender and room_gender != gender:
+                continue
+                
+            if age and abs(room_age - age) > 2:
+                continue
+                
+            if country and room_country != country:
+                continue
+                
+            # Вычисление сходства
+            similarity = VectorStorage.cosine_similarity(query, vector)
+            
             if similarity >= similarity_threshold:
-                room_id = key[len(VectorStorage.PREFIX):]
-                similarities.append((room_id, similarity))
+                results.append((
+                    room_id,
+                    similarity,
+                    room_gender,
+                    room_age,
+                    room_country
+                ))
         
-        # Сортируем и возвращаем топ-k
-        return [i[0] for i in sorted(similarities, key=lambda x: -x[1])[:top_k]]
+        # Сортировка и ограничение результатов
+        return [i[0] for i in sorted(results, key=lambda x: -x[1])[:top_k]]
