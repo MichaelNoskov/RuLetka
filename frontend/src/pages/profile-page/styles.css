@@ -36,6 +36,14 @@ body {
   gap: 20px;
 }
 
+.message-container {
+  background-color: #EBEBEB;
+  justify-items: center;
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+
 .interests-wrapper {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

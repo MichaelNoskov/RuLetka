@@ -36,17 +36,27 @@ const theme = createTheme({
 });
 
 const MainPage = function(){
-    const [searchForm, setSearchForm] = useState({
-        country: '',
-        is_male: '',
-        age: ''
-    });    
-    
     const [isCalling, setIsCalling] = useState(false);
     const [IsMuteVideo, SetIsMuteVideo] = useState(false);
     const [IsMuteAudio, SetIsMuteAudio] = useState(false);
     const localVideoRef = useRef(null);
     const remoteVideoRef = useRef(null);
+
+    const [searchForm, setSearchForm] = useState({
+        country: '',
+        is_male: '',
+        age: ''
+    });
+
+    const prepareSearchParameters = (form) => {
+        const formData = new FormData();
+    
+        if (form.country && form.country !== '') {formData.append('country', form.country);}    
+        if (form.is_male !== '') {formData.append('is_male', form.is_male);}
+        if (form.age !== '') {formData.append('age', parseInt(form.age, 10));}
+    
+        return formData;
+    };
 
     useEffect(() => {
         window.localVideo = document.getElementById('localVideo');
@@ -62,7 +72,8 @@ const MainPage = function(){
         console.log('call start')
         setIsCalling(true);
         try {
-            await initiateConnection({ audio: !IsMuteAudio, video: !IsMuteVideo, searchParameters: JSON.stringify(searchForm) });
+            const searchParameters = prepareSearchParameters(searchForm);
+            await initiateConnection({ audio: !IsMuteAudio, video: !IsMuteVideo, searchParameters: searchParameters });
         } catch (error) {
             console.error("Failed to initiate connection:", error);
             setIsCalling(false);
@@ -109,14 +120,14 @@ const MainPage = function(){
             <Box className="centered-container">
                 <Box className="aspect-ratio-box">
                     <Box className="video-container-focus">
-                        <Avatar sx={{ bgcolor: '#FFF6EE', width: 350, height: 350, position: 'absolute', zIndex: 1 }}>
+                        <Avatar sx={{ bgcolor: '#FFF6EE', width: 350, height: 350, position: 'absolute' }}>
                             <PersonIcon sx={{ color: '#CE9595', fontSize: 250 }} />
                         </Avatar>
                         <div id="audioContent"></div>
                         <video id="remoteVideo" ref={remoteVideoRef} autoPlay className='video'></video>
                     </Box>
                     <Box className="video-container-mini">
-                        <Avatar sx={{ bgcolor: '#EEF5FF', width: 100, height: 100, position: 'absolute', zIndex: 1  }}>
+                        <Avatar sx={{ bgcolor: '#EEF5FF', width: 100, height: 100, position: 'absolute'  }}>
                             <PersonIcon sx={{ color: '#9599CE', fontSize: 65 }} />
                         </Avatar>
                         <video id="localVideo" ref={localVideoRef} autoPlay muted className='video'></video>

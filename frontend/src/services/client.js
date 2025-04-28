@@ -3,82 +3,7 @@ import { URLs } from "../const";
 var pc = null;
 var localStream = null;
 var audioBlock = document.getElementById("audioContent");
-// var statusText = document.getElementById("status");
-// var usersList = document.getElementById("users");
-// var roomIDInput = document.getElementById("roomID");
-// var emptySound = true;
-var statsIntervalId = null;
-let previousStats = {};
-// let room_id = null;
 
-async function startStats() {
-    if (!pc) return;
-    statsIntervalId = setInterval(async () => {
-        try {
-            const stats = await pc.getStats();
-            stats.forEach(report => {
-                if (report.type === 'inbound-rtp' && report.kind === 'audio') {
-                    const currentPacketsLost = report.packetsLost;
-                    const currentPacketsReceived = report.packetsReceived;
-                    const ssrc = report.ssrc;
-                    // const jitter = report.jitter;
-                    const bytesReceived = report.bytesReceived;
-                    if (previousStats[ssrc]) {
-                        const previousPacketsLost = previousStats[ssrc].packetsLost;
-                        const previousPacketsReceived = previousStats[ssrc].packetsReceived;
-                        // const previousBytesReceived = previousStats[ssrc].bytesReceived;
-                        const packetsLostDelta = currentPacketsLost - previousPacketsLost;
-                        const packetsReceivedDelta = currentPacketsReceived - previousPacketsReceived;
-                        // const bytesReceivedDelta = bytesReceived - previousBytesReceived
-                        const totalPacketsDelta = packetsLostDelta + packetsReceivedDelta;
-                        // let packetLossPercentage = 0;
-                        if (totalPacketsDelta > 0) {
-                            // packetLossPercentage = (packetsLostDelta / totalPacketsDelta) * 100;
-                            // const bitrate = bytesReceivedDelta * 8 / 1000;
-                            // statusText.textContent = `[Inbound Audio] Packet Loss: ${packetLossPercentage.toFixed(2)}%, Jitter: ${jitter}, Bitrate: ${bitrate} kbps`;
-                            previousStats[ssrc] = {
-                                packetsLost: currentPacketsLost,
-                                packetsReceived: currentPacketsReceived,
-                                bytesReceived: bytesReceived
-                            };
-                        }
-                    }
-                } else if (report.type === 'outbound-rtp' && report.kind === 'audio') {
-                    const currentPacketsLost = report.packetsLost;
-                    const currentPacketsSent = report.packetsSent;
-                    const ssrc = report.ssrc;
-                    // const bytesSent = report.bytesSent;
-                    if (previousStats[ssrc]) {
-                        const previousPacketsLost = previousStats[ssrc].packetsLost;
-                        const previousPacketsSent = previousStats[ssrc].packetsSent;
-                        // const previousBytesSent = previousStats[ssrc].bytesSent;
-                        const packetsLostDelta = currentPacketsLost - previousPacketsLost;
-                        const packetsSentDelta = currentPacketsSent - previousPacketsSent;
-                        // const bytesSentDelta = bytesSent - previousBytesSent
-                        const totalPacketsDelta = packetsLostDelta + packetsSentDelta;
-                        // let packetLossPercentage = 0;
-                        if (totalPacketsDelta > 0) {
-                            // packetLossPercentage = (packetsLostDelta / totalPacketsDelta) * 100;
-                            // const bitrate = bytesSentDelta * 8 / 1000;
-                            // statusText.textContent = `[Outbound Audio] Packet Loss: ${packetLossPercentage.toFixed(2)}%, Bitrate: ${bitrate} kbps`;
-                            previousStats[ssrc] = {
-                                packetsLost: report.packetsLost,
-                                packetsSent: report.packetsSent,
-                                bytesSent: report.bytesSent
-                            };
-                        }
-                    }
-                }
-            });
-        } catch (e) {
-            console.error("Error getting stats:", e);
-        }
-    }, 1000);
-}
-
-function stopStats() {
-    clearInterval(statsIntervalId);
-}
 
 export function toggleAudioMute(mute) {
     if (localStream) {
@@ -132,7 +57,7 @@ export async function initiateConnection({ audio = true, video = true, searchPar
             if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
                 console.log('connection break');
                 disconnect();
-                initiateConnection();
+                // initiateConnection();
             }
         });
         pc.ondatachannel = (event) => {
@@ -187,6 +112,7 @@ export async function initiateConnection({ audio = true, video = true, searchPar
             headers: {
                 'Content-Type': 'application/json',
             },
+            body: searchParameters,
             credentials: 'include',
         });
 
@@ -211,8 +137,7 @@ export async function initiateConnection({ audio = true, video = true, searchPar
             }),
         });
         // statusText.textContent = 'Отправлен ответ на оффер для подключения'
-        console.log('Answer sended to server')
-        startStats();
+        console.log('Answer sended to server');
     } catch (error) {
         console.error("Error starting WebRTC:", error);
         alert("Failed to start WebRTC: " + error.message);
@@ -222,8 +147,6 @@ export async function initiateConnection({ audio = true, video = true, searchPar
 export async function disconnect() {
     if (pc) {
         // statusText.textContent = 'Отключаемся...';
-        stopStats();
-
         // Остановка локального потока
         if (localStream) {
             localStream.getTracks().forEach(track => {
@@ -248,15 +171,3 @@ export async function disconnect() {
         // statusText.textContent = 'Отключено';
     }
 }
-
-function stop() {
-    stopStats();
-    if (pc) {
-        localStream.getTracks().forEach(track => track.stop());
-        pc.close();
-        localStream = null;
-        pc = null;
-        audioBlock.innerHTML = '';
-    }
-}
-

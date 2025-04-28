@@ -4,8 +4,6 @@ import mouse from '../../static/mouse.jpg'
 
 import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
-import { fetchUser, setUser } from '../../store/userSlice';
 
 import { createTheme, ThemeProvider, styled } from '@mui/material/styles';
 import Container from '@mui/material/Container';
@@ -18,10 +16,12 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
 import Button from '@mui/material/Button';
 import Skeleton from '@mui/material/Skeleton';
+import Alert from '@mui/material/Alert';
 
 import VideoCameraFrontIcon from '@mui/icons-material/VideoCameraFront';
 import LogoutIcon from '@mui/icons-material/Logout';
 import SaveIcon from '@mui/icons-material/Save';
+import CheckIcon from '@mui/icons-material/Check';
 
 
 const theme = createTheme({
@@ -81,23 +81,28 @@ const InterestsHitbox = styled('div')({
 
 export default function ProfilePage() {
     const navigate = useNavigate()
-    const dispatch = useDispatch();
-    const user = useSelector((state) => state.user.data);
-    const status = useSelector((state) => state.user.status);
+    const [selectedInterests, setSelectedInterests] = useState([]);
+    const [selectedInterestsInitial, setSelectedInterestsInitial] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [saveLoading, setSaveLoading] = useState(false);
+    const [saveSuccess, setSaveSuccess] = useState(false);
+    const [saveError, setSaveError] = useState('');
 
-    const [selectedInterests, setSelectedInterests] = useState(user?.selectedInterests || []);
-    const [form, setForm] = useState(user || {});
-    const [formInitial, setFormInitial] = useState(user || {});
+    const [form, setForm] = useState({
+        username: '',
+        is_male: '',
+        birthdate: '',
+        country: '',
+        description: '',
+    });
 
-    useEffect(() => {
-        if (!user && status === 'idle') {
-            dispatch(fetchUser());
-        } else if (user) {
-            setForm(user);
-            setFormInitial(user);
-            setSelectedInterests(user.selectedInterests || []);
-        }
-    }, [dispatch, user, status]);
+    const [formInitial, setFormInitial] = useState({
+        username: '',
+        is_male: '',
+        birthdate: '',
+        country: '',
+        description: '',
+    });
 
     const toggleInterest = (value) => {
         setSelectedInterests((prev) =>
@@ -135,6 +140,10 @@ export default function ProfilePage() {
     }
 
     async function saveChanges() {
+        setSaveLoading(true);
+        setSaveSuccess(false);
+        setSaveError('');
+
         const formData = new FormData();
         formData.append('username', form.username);
         formData.append('is_male', form.is_male);
@@ -142,8 +151,6 @@ export default function ProfilePage() {
         formData.append('country', form.country);
         formData.append('description', form.description);
         // formData.append('interests', JSON.stringify(selectedInterests));
-
-        console.log(form)
 
         try {
             const response = await fetch(`${URLs.backendHost}/api/user/`, {
@@ -157,11 +164,16 @@ export default function ProfilePage() {
             if (!response.ok) {
                 throw new Error(data.detail || 'Ошибка при изменении');
             }
-            dispatch(setUser({...form, selectedInterests}));
-            setFormInitial({ ...form, selectedInterests });
 
+            setFormInitial({ ...form });
+            setSelectedInterestsInitial(selectedInterests);
+            setSaveSuccess(true);
+            setTimeout(() => setSaveSuccess(false), 2000);
         } catch (err) {
             console.log(err);
+            setSaveError(err.message || 'Не удалось сохранить изменения');
+        } finally {
+            setSaveLoading(false);
         }
     }
 
@@ -189,12 +201,10 @@ export default function ProfilePage() {
                     description: data.description || '',
                     // selectedInterests: data.interests || [], 
                 };
+
                 setForm(userData)
                 setFormInitial(userData)
-                // setSelectedInterests(data.interests || [])
-
-                // Assuming interests are returned in the userData
-                // You might need to adjust this part based on your API response
+                setIsLoading(false)
                 //setSelectedInterests(userData.interests || []);
 
             } catch (error) {
@@ -226,7 +236,7 @@ export default function ProfilePage() {
           form.birthdate !== formInitial.birthdate ||
           form.country !== formInitial.country ||
           form.description !== formInitial.description ||
-          !arraysEqual(selectedInterests, formInitial.selectedInterests)
+          !arraysEqual(selectedInterests, selectedInterestsInitial)
         );
     };
 
@@ -275,7 +285,7 @@ export default function ProfilePage() {
                         <Box className="personal-container">
                             <p className="interests-title">Сведения</p>
 
-                            {status === 'loading' ? (  // Show skeletons if loading
+                            {isLoading ? (  // Show skeletons if loading
                                 <>
                                     <Skeleton variant="rectangular" width={290} height={40} />
                                     <Skeleton variant="rectangular" width={290} height={40} />
@@ -302,7 +312,7 @@ export default function ProfilePage() {
                                     label="Пол"
                                     size="small"
                                     select>
-                                    {genders.map((option) => (
+                                    {genders.slice(1).map((option) => (
                                         <MenuItem key={option.value} value={option.value}>
                                             {option.label}
                                         </MenuItem>
@@ -328,7 +338,7 @@ export default function ProfilePage() {
                                     size="small"
                                     select
                                 >
-                                    {countries.map((option) => (
+                                    {countries.slice(1).map((option) => (
                                         <MenuItem key={option.value} value={option.value}>
                                             {option.label}
                                         </MenuItem>
@@ -355,60 +365,75 @@ export default function ProfilePage() {
                     <Grid size={8}>
                         <Box className="interests-container">
                             <p className="interests-title">Ваши интересы</p>
-                            <div className="interests-wrapper">
-                                {interests.map((option) => {
-                                const bgImage = getBackgroundImage(option.value)
-                                return (
-                                    <Item key={option.value} bgimage={bgImage} style={{ cursor: 'pointer' }}>
-                                    <FormControlLabel
-                                        control={
-                                        <Checkbox
-                                            checked={selectedInterests.includes(option.value)}
-                                            value={option.value}
-                                            onChange={() => toggleInterest(option.value)}
-                                            tabIndex={0}
-                                            sx={{
-                                                color: 'white',
-                                                '&.Mui-checked': { color: 'white'},
-                                                position: 'relative',
-                                                zIndex: 3,
-                                            }}
-                                        />
-                                        }
-                                        label={option.label}
-                                        sx={{
-                                            color: 'white',
-                                            userSelect: 'none',
-                                            '& .MuiFormControlLabel-label': { lineHeight: 1 },
-                                        }}
-                                    />
-                                    <InterestsHitbox
-                                        onClick={() => toggleInterest(option.value)}
-                                        role="button"
-                                        aria-pressed={selectedInterests.includes(option.value)}
-                                        tabIndex={-1}
-                                        onKeyDown={(e) => {
-                                            if (e.key === ' ' || e.key === 'Enter') {
-                                                e.preventDefault();
-                                                toggleInterest(option.value);
-                                            }
-                                        }}
-                                    />
-                                    </Item>
-                                );
-                                })}
-                            </div>
+                                {interests && interests.length > 0 ? (
+                                    <div className="interests-wrapper">
+                                        {interests.map((option) => {
+                                            const bgImage = getBackgroundImage(option.value)
+                                            return (
+                                                <Item key={option.value} bgimage={bgImage} style={{ cursor: 'pointer' }}>
+                                                <FormControlLabel
+                                                    control={
+                                                    <Checkbox
+                                                        checked={selectedInterests.includes(option.value)}
+                                                        value={option.value}
+                                                        onChange={() => toggleInterest(option.value)}
+                                                        tabIndex={0}
+                                                        sx={{
+                                                            color: 'white',
+                                                            '&.Mui-checked': { color: 'white'},
+                                                            position: 'relative',
+                                                            zIndex: 3,
+                                                        }}
+                                                    />
+                                                    }
+                                                    label={option.label}
+                                                    sx={{
+                                                        color: 'white',
+                                                        userSelect: 'none',
+                                                        '& .MuiFormControlLabel-label': { lineHeight: 1 },
+                                                    }}
+                                                />
+                                                <InterestsHitbox
+                                                    onClick={() => toggleInterest(option.value)}
+                                                    role="button"
+                                                    aria-pressed={selectedInterests.includes(option.value)}
+                                                    tabIndex={-1}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === ' ' || e.key === 'Enter') {
+                                                            e.preventDefault();
+                                                            toggleInterest(option.value);
+                                                        }
+                                                    }}
+                                                />
+                                                </Item>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    <Container className='message-container'>
+                                        <p className="interests-title">Похоже, интересы еще не загружены в систему</p>
+                                    </Container>
+                                )}
                             <Button
                                 variant="contained"
-                                startIcon={<SaveIcon/>}
                                 sx={{
                                     color: 'white',
                                     fontWeight: 'bold',
                                     padding: '10px'
-                                 }}
-                                disabled={!hasChanges()}
+                                }}
+                                disabled={!hasChanges() || saveLoading}
+                                loading={saveLoading}
+                                startIcon={saveSuccess ? <CheckIcon /> : <SaveIcon />}
                                 onClick={saveChanges}
-                            >Сохранить изменения</Button>
+                            >
+                                {saveSuccess ? 'Сохранено!' : 'Сохранить изменения'}
+                            </Button>
+
+                            {saveError && (
+                            <Alert severity="error" sx={{ marginTop: '0px' }}>
+                                {saveError}
+                            </Alert>
+                            )}
                         </Box>
                     </Grid>
                 </Grid>

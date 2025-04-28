@@ -9,7 +9,7 @@ import Stack from '@mui/material/Stack';
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
-
+import Alert from '@mui/material/Alert';
 
 
 const theme = createTheme({
@@ -21,45 +21,43 @@ const theme = createTheme({
 });
 
 export default function LoginPage() {
-    // const dispatch = useDispatch()
     const navigate = useNavigate()
-
-    const [username, setUsername] = useState('');
-    const handleUsernameChange = (event) => setUsername(event.target.value);
-    const [password, setPassword] = useState('');
-    const handlePasswordChange = (event) => setPassword(event.target.value);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState();
 
+    const [form, setForm] = useState({
+        username: '',
+        password: '',
+    });
+
+    const handleChange = (event) => {
+        const { name, value } = event.target;
+        setForm(prevForm => ({ ...prevForm, [name]: value }));
+        setIsSubmitting(false);
+    };
+
     function validateForm() {
-        if (!username || !password) {
+        if (!form.username || !form.password) {
             setError('Пожалуйста, заполните все поля');
             return false;
         }
-        // if (username.length < 4) {
-        //     setError('Логин должен содержать минимум 4 символа');
-        //     return false;
-        // }
-        // if (password.length < 4) {
-        //     setError('Пароль должен содержать минимум 4 символа');
-        //     return false;
-        // }
         setError(null);
         return true;
     }
 
     async function handleLogin() {
         if (!validateForm()) {
+            setIsSubmitting(true);
             return;
         }
 
+        setIsSubmitting(true);
         console.log('login attempt')
 
         try {
-            // Формируем данные для отправки в формате application/x-www-form-urlencoded,
-            // так как backend ожидает OAuth2PasswordRequestForm
             const formData = new URLSearchParams();
-            formData.append('username', username);
-            formData.append('password', password);
+            formData.append('username', form.username);
+            formData.append('password', form.password);
 
             const response = await fetch(`${URLs.backendHost}/auth/login`, {
                 method: 'POST',
@@ -67,7 +65,7 @@ export default function LoginPage() {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
                 body: formData.toString(),
-                credentials: 'include', // чтобы куки с токеном сохранились
+                credentials: 'include',
             });
 
             const data = await response.json();
@@ -76,19 +74,11 @@ export default function LoginPage() {
                 throw new Error(data.detail || 'Ошибка при входе');
             }
 
-            // Успешный вход
-            // Можно обновить состояние пользователя в redux или context
-            // dispatch(
-            //     setUser(
-            //         {
-            //             user: response.data,
-            //             token: response.data.accessToken
-            //         }
-            //     )
-            // )
-            navigate('/'); // Перенаправление после успешного входа
+            setIsSubmitting(false);
+            navigate('/');
         } catch (err) {
             setError(err.message);
+            setIsSubmitting(false);
         }
     }
 
@@ -103,16 +93,18 @@ export default function LoginPage() {
                 <Box className="login-container">
                     <p className="title">Вход в систему</p>
                     <TextField
-                        onChange={handleUsernameChange}
-                        value={username}
+                        name="username"
+                        onChange={handleChange}
+                        value={form.username}
                         className="text-field"
                         label="Логин"
                         size="small"
                         error={error}
                     />
                     <TextField
-                        onChange={handlePasswordChange}
-                        value={password}
+                        name="password"
+                        onChange={handleChange}
+                        value={form.password}
                         className="text-field"
                         label="Пароль"
                         size="small"
@@ -120,7 +112,11 @@ export default function LoginPage() {
                         error={error}
                     />
 
-                    {error && <p style={{ color: 'red', margin: 0}}>{error}</p>}
+                    {error && (
+                    <Alert severity="error" sx={{ marginTop: '0px' }}>
+                        {error}
+                    </Alert>
+                    )}
 
                     <Button
                         className="login-button"
@@ -131,7 +127,7 @@ export default function LoginPage() {
                             fontWeight: 'bold',
                             padding: '10px',
                         }}
-                        disabled={(!username || !password)}
+                        disabled={isSubmitting}
                         onClick={handleLogin}
                     >Войти</Button>
                     <a className="subtitle" href={appRoutes.register}>Нет аккаунта? Зарегистрироваться</a>
