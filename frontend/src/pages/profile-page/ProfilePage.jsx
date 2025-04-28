@@ -88,15 +88,20 @@ export default function ProfilePage() {
     const [saveError, setSaveError] = useState('');
 
     const [form, setForm] = useState({
-        country: '',
+        username: '',
         is_male: '',
-        age: ''
+        birthdate: '',
+        country: '',
+        description: '',
     });
 
     const [formInitial, setFormInitial] = useState({
-        country: '',
+        username: '',
         is_male: '',
-        age: ''
+        birthdate: '',
+        country: '',
+        description: '',
+        selectedInterests: [],
     });
 
     const toggleInterest = (value) => {
@@ -161,9 +166,9 @@ export default function ProfilePage() {
             if (!response.ok) {
                 throw new Error(data.detail || 'Ошибка при изменении');
             }
+
             setFormInitial({ ...form });
             setSaveSuccess(true);
-
             setTimeout(() => setSaveSuccess(false), 2000);
         } catch (err) {
             console.log(err);
@@ -201,10 +206,6 @@ export default function ProfilePage() {
                 setForm(userData)
                 setFormInitial(userData)
                 setIsLoading(false)
-                // setSelectedInterests(data.interests || [])
-
-                // Assuming interests are returned in the userData
-                // You might need to adjust this part based on your API response
                 //setSelectedInterests(userData.interests || []);
 
             } catch (error) {
@@ -312,7 +313,7 @@ export default function ProfilePage() {
                                     label="Пол"
                                     size="small"
                                     select>
-                                    {genders.map((option) => (
+                                    {genders.slice(1).map((option) => (
                                         <MenuItem key={option.value} value={option.value}>
                                             {option.label}
                                         </MenuItem>
@@ -338,7 +339,7 @@ export default function ProfilePage() {
                                     size="small"
                                     select
                                 >
-                                    {countries.map((option) => (
+                                    {countries.slice(1).map((option) => (
                                         <MenuItem key={option.value} value={option.value}>
                                             {option.label}
                                         </MenuItem>
