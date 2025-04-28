@@ -11,13 +11,13 @@ export const URLs = {
 }
 
 export const genders = [
-    // { value: '', label: '👤 Не указан' },
+    { value: '', label: '👤 Не указан' },
     { value: true, label: '👨 Мужской' },
     { value: false, label: '👩 Женский' },
 ];
 
 export const countries = [
-    // { value: '', label: ' 🏳️ Не указана' },
+    { value: '', label: ' 🏳️ Не указана' },
     { value: 'RU', label: '🇷🇺 Российская Федерация' },
     { value: 'US', label: '🇺🇸 Соединенные Штаты Америки' },
     { value: 'CN', label: '🇨🇳 Китай' },

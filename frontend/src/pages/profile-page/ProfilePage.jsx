@@ -16,10 +16,12 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
 import Button from '@mui/material/Button';
 import Skeleton from '@mui/material/Skeleton';
+import Alert from '@mui/material/Alert';
 
 import VideoCameraFrontIcon from '@mui/icons-material/VideoCameraFront';
 import LogoutIcon from '@mui/icons-material/Logout';
 import SaveIcon from '@mui/icons-material/Save';
+import CheckIcon from '@mui/icons-material/Check';
 
 
 const theme = createTheme({
@@ -79,9 +81,11 @@ const InterestsHitbox = styled('div')({
 
 export default function ProfilePage() {
     const navigate = useNavigate()
-
     const [selectedInterests, setSelectedInterests] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [saveLoading, setSaveLoading] = useState(false);
+    const [saveSuccess, setSaveSuccess] = useState(false);
+    const [saveError, setSaveError] = useState('');
 
     const [form, setForm] = useState({
         country: '',
@@ -131,6 +135,10 @@ export default function ProfilePage() {
     }
 
     async function saveChanges() {
+        setSaveLoading(true);
+        setSaveSuccess(false);
+        setSaveError('');
+
         const formData = new FormData();
         formData.append('username', form.username);
         formData.append('is_male', form.is_male);
@@ -154,9 +162,14 @@ export default function ProfilePage() {
                 throw new Error(data.detail || 'Ошибка при изменении');
             }
             setFormInitial({ ...form });
+            setSaveSuccess(true);
 
+            setTimeout(() => setSaveSuccess(false), 2000);
         } catch (err) {
             console.log(err);
+            setSaveError(err.message || 'Не удалось сохранить изменения');
+        } finally {
+            setSaveLoading(false);
         }
     }
 
@@ -403,15 +416,24 @@ export default function ProfilePage() {
                                 )}
                             <Button
                                 variant="contained"
-                                startIcon={<SaveIcon/>}
                                 sx={{
                                     color: 'white',
                                     fontWeight: 'bold',
                                     padding: '10px'
-                                 }}
-                                disabled={!hasChanges()}
+                                }}
+                                disabled={!hasChanges() || saveLoading}
+                                loading={saveLoading}
+                                startIcon={saveSuccess ? <CheckIcon /> : <SaveIcon />}
                                 onClick={saveChanges}
-                            >Сохранить изменения</Button>
+                            >
+                                {saveSuccess ? 'Сохранено!' : 'Сохранить изменения'}
+                            </Button>
+
+                            {saveError && (
+                            <Alert severity="error" sx={{ marginTop: '0px' }}>
+                                {saveError}
+                            </Alert>
+                            )}
                         </Box>
                     </Grid>
                 </Grid>
