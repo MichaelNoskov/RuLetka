@@ -187,6 +187,7 @@ export async function initiateConnection({ audio = true, video = true, searchPar
             headers: {
                 'Content-Type': 'application/json',
             },
+            body: searchParameters,
             credentials: 'include',
         });
 
@@ -248,15 +249,3 @@ export async function disconnect() {
         // statusText.textContent = 'Отключено';
     }
 }
-
-function stop() {
-    stopStats();
-    if (pc) {
-        localStream.getTracks().forEach(track => track.stop());
-        pc.close();
-        localStream = null;
-        pc = null;
-        audioBlock.innerHTML = '';
-    }
-}
-

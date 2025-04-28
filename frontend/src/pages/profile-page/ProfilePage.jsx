@@ -352,49 +352,55 @@ export default function ProfilePage() {
                     <Grid size={8}>
                         <Box className="interests-container">
                             <p className="interests-title">Ваши интересы</p>
-                            <div className="interests-wrapper">
-                                {interests.map((option) => {
-                                const bgImage = getBackgroundImage(option.value)
-                                return (
-                                    <Item key={option.value} bgimage={bgImage} style={{ cursor: 'pointer' }}>
-                                    <FormControlLabel
-                                        control={
-                                        <Checkbox
-                                            checked={selectedInterests.includes(option.value)}
-                                            value={option.value}
-                                            onChange={() => toggleInterest(option.value)}
-                                            tabIndex={0}
-                                            sx={{
-                                                color: 'white',
-                                                '&.Mui-checked': { color: 'white'},
-                                                position: 'relative',
-                                                zIndex: 3,
-                                            }}
-                                        />
-                                        }
-                                        label={option.label}
-                                        sx={{
-                                            color: 'white',
-                                            userSelect: 'none',
-                                            '& .MuiFormControlLabel-label': { lineHeight: 1 },
-                                        }}
-                                    />
-                                    <InterestsHitbox
-                                        onClick={() => toggleInterest(option.value)}
-                                        role="button"
-                                        aria-pressed={selectedInterests.includes(option.value)}
-                                        tabIndex={-1}
-                                        onKeyDown={(e) => {
-                                            if (e.key === ' ' || e.key === 'Enter') {
-                                                e.preventDefault();
-                                                toggleInterest(option.value);
-                                            }
-                                        }}
-                                    />
-                                    </Item>
-                                );
-                                })}
-                            </div>
+                                {interests && interests.length > 0 ? (
+                                    <div className="interests-wrapper">
+                                        {interests.map((option) => {
+                                            const bgImage = getBackgroundImage(option.value)
+                                            return (
+                                                <Item key={option.value} bgimage={bgImage} style={{ cursor: 'pointer' }}>
+                                                <FormControlLabel
+                                                    control={
+                                                    <Checkbox
+                                                        checked={selectedInterests.includes(option.value)}
+                                                        value={option.value}
+                                                        onChange={() => toggleInterest(option.value)}
+                                                        tabIndex={0}
+                                                        sx={{
+                                                            color: 'white',
+                                                            '&.Mui-checked': { color: 'white'},
+                                                            position: 'relative',
+                                                            zIndex: 3,
+                                                        }}
+                                                    />
+                                                    }
+                                                    label={option.label}
+                                                    sx={{
+                                                        color: 'white',
+                                                        userSelect: 'none',
+                                                        '& .MuiFormControlLabel-label': { lineHeight: 1 },
+                                                    }}
+                                                />
+                                                <InterestsHitbox
+                                                    onClick={() => toggleInterest(option.value)}
+                                                    role="button"
+                                                    aria-pressed={selectedInterests.includes(option.value)}
+                                                    tabIndex={-1}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === ' ' || e.key === 'Enter') {
+                                                            e.preventDefault();
+                                                            toggleInterest(option.value);
+                                                        }
+                                                    }}
+                                                />
+                                                </Item>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    <Container className='message-container'>
+                                        <p className="interests-title">Похоже, интересы еще не загружены в систему</p>
+                                    </Container>
+                                )}
                             <Button
                                 variant="contained"
                                 startIcon={<SaveIcon/>}

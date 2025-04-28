@@ -22,6 +22,7 @@ const theme = createTheme({
 
 export default function RegisterPage() {
     const navigate = useNavigate()
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [form, setForm] = useState({
         username: '',
@@ -79,12 +80,6 @@ export default function RegisterPage() {
             'Пароли не совпадают'
         ) && isValid;
 
-        // isValid = checkError(
-        //     form.password !== form.passwordConfirm,
-        //     'password',
-        //     'Пароли не совпадают'
-        // ) && isValid;
-
         const birthDateObj = new Date(form.birthdate);
         const now = new Date();
 
@@ -107,9 +102,11 @@ export default function RegisterPage() {
     
     async function handleRegister() {
         if (!validateForm()) {
+            setIsSubmitting(true);
             return;
         }
 
+        setIsSubmitting(true);
         console.log('registration attempt')
 
         console.log(JSON.stringify({
@@ -141,10 +138,11 @@ export default function RegisterPage() {
                 throw new Error(data.detail || 'Ошибка при регистрации');
             }
 
-            // Успешная регистрация, можно сразу перейти на страницу логина
+            setIsSubmitting(false);
             navigate(appRoutes.login);
         } catch (err) {
             setErrors(prevErrors => ({ ...prevErrors, general: err}));
+            setIsSubmitting(false);
         }
     }
 
@@ -232,7 +230,13 @@ export default function RegisterPage() {
                         ))}
                     </TextField>
 
-                    {/* {errors.general && <p style={{ color: 'red', margin: 0}}>{errors.general}</p>} */}
+                    {errors.general && (
+                        <p style={{ color: 'red', margin: 0 }}>
+                            {typeof errors.general === 'string'
+                            ? errors.general
+                            : errors.general?.message || JSON.stringify(errors.general)}
+                        </p>
+                    )}
                     
                     <Button
                             className="register-button"
@@ -243,7 +247,7 @@ export default function RegisterPage() {
                                 fontWeight: 'bold',
                                 padding: '10px',
                             }}
-                            disabled={Boolean(errors.general)}
+                            disabled={Boolean(isSubmitting)}
                             onClick={handleRegister}
                     >Зарегистрироваться</Button>
                     <a className="subtitle" href={appRoutes.login}>Есть аккаунт? Войти</a>
