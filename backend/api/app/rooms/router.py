@@ -109,7 +109,7 @@ async def initiate_connection(
             })
         )
 
-    pc.addTransceiver('audio', 'recvonly')
+    # pc.addTransceiver('audio', 'recvonly')
     pc.addTransceiver('video', 'recvonly')
     
     rooms[room_id].append(pc)
@@ -118,7 +118,7 @@ async def initiate_connection(
     for other_pc in rooms[room_id]:
         if other_pc != pc:
             for track in tracks[other_pc]:
-                pc.addTrack(MediaRelay().subscribe(track))
+                pc.addTransceiver(MediaRelay().subscribe(track), 'sendonly')
 
     @pc.on('iceconnectionstatechange')
     async def on_iceconnectionstatechange():
@@ -129,7 +129,7 @@ async def initiate_connection(
 
     @pc.on('track')
     async def on_track(track):
-        if track.kind not in ('audio', 'video'):
+        if track.kind not in ('video'):
             return
 
         tracks[pc].add(track)

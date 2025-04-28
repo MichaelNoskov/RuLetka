@@ -54,7 +54,7 @@ async def security_middleware(request: Request, handler: Callable):
 
 
 origins = [
-    "http://localhost:3000",
+    "http://192.168.66.247:3000",
 ]
 
 app.add_middleware(
