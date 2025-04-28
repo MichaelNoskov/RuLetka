@@ -163,3 +163,4 @@ cython_debug/
 
 # Данные с MinIO
 data/buckets/
+*.vscode

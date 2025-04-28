@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+python-jose
+passlib
+python-dotenv
+asyncpg
+sqlalchemy
+pydantic-settings
+python-multipart
+msgpack
+aio-pika
