@@ -2,8 +2,9 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    PORT: int
+    BACKEND_PORT: int
     FASTAPI_PORT: int
+    BACKEND_HOST: str
 
     POSTGRES_HOST: str
     POSTGRES_PORT: int

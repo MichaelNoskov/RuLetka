@@ -4,9 +4,9 @@ services:
   api:
     build: ./backend/api
     expose:
-      - "${PORT}"
+      - "${BACKEND_PORT}"
     ports:
-      - "${PORT}:${FASTAPI_PORT}"
+      - "${BACKEND_PORT}:${FASTAPI_PORT}"
     restart: unless-stopped
     env_file:
       - ./backend/.env
@@ -112,6 +112,18 @@ services:
     env_file:
       - ./backend/.env
     command: redis-server --requirepass $REDIS_PASSWORD
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    expose:
+      - "3000"
+    env_file:
+      - ./backend/.env
+    stdin_open: true
+    tty: true
+
 
 volumes:
   # postgres-data:
