@@ -101,7 +101,6 @@ export default function ProfilePage() {
         birthdate: '',
         country: '',
         description: '',
-        selectedInterests: [],
     });
 
     const toggleInterest = (value) => {
