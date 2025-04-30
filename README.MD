@@ -40,26 +40,26 @@ Frontend доступен по ссылке http://localhost:3000/
 
 ## Структура сервисов
   
-├── backend - бэкенд
-│   ├── api - REST
-│   │   ├── alembic - миграции для бд клиента (Postgres)
-│   │   └── app - сервисы FastAPI
-│   │       ├── auth - авторизация
-│   │       ├── expirience - информация пользователя
-│   │       └── rooms - основной функционал чат рулетки
-│   ├── common - общие для бэкенда скрипты
-│   │   ├── core - конфиги
-│   │   ├── schemas - pydantic схемы
-│   │   └── storage - всё для работы с различными бд
-│   │       ├── click_migrations - миграции для ClickHouse
-│   │       ├── models - модели данных
-│   ├── data_processor - сервис с ИИ моделью, генерирующей векторное описание пользователя
-│   │   ├── handlers
-│   │   └── models - ИИ модели
-│   │       └── rubert-tiny2
-│   └── pg_consumer - consumer для обращений к postgres-у
-│       └── handlers
-├── frontend - фронтенд
-
+├── backend - бэкенд  
+│   ├── api - REST  
+│   │   ├── alembic - миграции для бд клиента (Postgres)  
+│   │   └── app - сервисы FastAPI  
+│   │       ├── auth - авторизация  
+│   │       ├── expirience - информация пользователя  
+│   │       └── rooms - основной функционал чат рулетки  
+│   ├── common - общие для бэкенда скрипты  
+│   │   ├── core - конфиги  
+│   │   ├── schemas - pydantic схемы  
+│   │   └── storage - всё для работы с различными бд  
+│   │       ├── click_migrations - миграции для ClickHouse  
+│   │       ├── models - модели данных  
+│   ├── data_processor - сервис с ИИ моделью, генерирующей векторное описание пользователя  
+│   │   ├── handlers  
+│   │   └── models - ИИ модели  
+│   │       └── rubert-tiny2  
+│   └── pg_consumer - consumer для обращений к postgres-у  
+│       └── handlers  
+├── frontend - фронтенд  
+  
   
 ![alt text](screenshots/Схема.jpg)
