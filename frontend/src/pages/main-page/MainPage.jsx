@@ -49,13 +49,27 @@ const MainPage = function(){
     });
 
     const prepareSearchParameters = (form) => {
-        const formData = new FormData();
+        if (form.country === '') {
+            form.country = null
+        }
+
+        if (form.age === '') {
+            form.age = null
+        } else {
+            form.age = parseInt(form.age, 10)
+        }
+
+        if (form.is_male === '') {
+            form.is_male = null
+        }
+
+        // const formData = new FormData();
     
-        if (form.country && form.country !== '') {formData.append('country', form.country);}    
-        if (form.is_male !== '') {formData.append('is_male', form.is_male);}
-        if (form.age !== '') {formData.append('age', parseInt(form.age, 10));}
+        // if (form.country && form.country !== '') {formData.append('country', form.country);}    
+        // if (form.is_male !== '') {formData.append('is_male', form.is_male);}
+        // if (form.age !== '') {formData.append('age', parseInt(form.age, 10));}
     
-        return formData;
+        return JSON.stringify(form);
     };
 
     useEffect(() => {
@@ -87,7 +101,13 @@ const MainPage = function(){
     };
   
     const handleSkipNext = () => {
-        console.log('call skip')
+        try {
+            disconnect();
+        } catch (error) {
+            console.error("Failed to initiate connection:", error);
+        }
+        const searchParameters = prepareSearchParameters(searchForm);
+        initiateConnection({ audio: !IsMuteAudio, video: !IsMuteVideo, searchParameters: JSON.stringify(searchParameters) });
     };
 
     useEffect(() => {

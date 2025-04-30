@@ -6,7 +6,7 @@ export const appRoutes = {
 }
 
 export const URLs = {
-    backendHost: 'http://' + process.env.BACKEND_HOST + ':8000',
+    backendHost: 'http://localhost:8000',
     imageURL: '/static/img-'
 }
 

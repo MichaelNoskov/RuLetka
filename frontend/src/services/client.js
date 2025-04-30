@@ -57,7 +57,7 @@ export async function initiateConnection({ audio = true, video = true, searchPar
             if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
                 console.log('connection break');
                 disconnect();
-                // initiateConnection();
+                initiateConnection({ audio: true, video: true, searchParameters: searchParameters });
             }
         });
         pc.ondatachannel = (event) => {

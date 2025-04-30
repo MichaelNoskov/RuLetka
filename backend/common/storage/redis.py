@@ -60,7 +60,7 @@ class VectorStorage:
     async def search_rooms(
         query_vector: np.ndarray,
         top_k: int = 3,
-        similarity_threshold: float = 0.1,
+        similarity_threshold: float = 0.6,
         gender: Optional[str] = None,
         age: Optional[int] = None,
         country: Optional[str] = None
@@ -77,25 +77,21 @@ class VectorStorage:
         
         for key in keys:
             data = await redis_client.hgetall(key)
-            
-            # Парсинг данных
+
             vector = np.frombuffer(data[b"vector"], dtype=np.float32)
             room_gender = data[b"gender"].decode()
             room_age = int(data[b"age"])
             room_country = data[b"country"].decode()
             room_id = data[b"room_id"].decode()
 
-            logger.info(f'{room_gender}, {gender}')
-            logger.info(f'{room_age}, {age}')
-            logger.info(f'{room_country}, {country}')
             # Фильтрация
-            if gender and room_gender != gender:
+            if gender is not None and room_gender != gender:
                 continue
                 
-            if age and abs(room_age - age) > 2:
+            if age is not None and abs(room_age - age) > 2:
                 continue
                 
-            if country and room_country != country:
+            if country is not None and room_country != country:
                 continue
                 
             # Вычисление сходства

@@ -32,7 +32,7 @@ async def handle_event_get_best(body: Dict[str, Any]) -> None:
 
     async with ClickHouseAsyncClient() as client:
 
-        neighbor = await client.get_neighbor(user_id, threshold=0.15)
+        neighbor = await client.get_neighbor(user_id, threshold=0.5)
 
     await send_answer(neighbor if neighbor else {}, "users", user_id)
 

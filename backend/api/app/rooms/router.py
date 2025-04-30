@@ -5,6 +5,7 @@ from aiortc.contrib.media import MediaRelay
 from pydantic.types import PastDate
 from datetime import date
 from common.schemas.user import UserInfo
+from common.schemas.params import SearchRoom
 import json
 import random
 from app.utils import get_user_id
@@ -38,11 +39,11 @@ async def send_user_list(room_id: str):
                     })
                 )
 
-async def find_available_room(user_id, gender=None, age=None, country=None):
+async def find_available_room(user_id, is_male=None, age=None, country=None):
     answer = await send_message({'user_id': user_id, 'action': 'get_user', 'target_user_id': user_id}, settings.MODEL_QUEUE, 'users', user_id, wait_answer=True)
     vector = np.array(json.loads(answer))
 
-    rooms_id = await VectorStorage.search_rooms(vector, gender=str(gender) if gender else gender, age=age, country=country)
+    rooms_id = await VectorStorage.search_rooms(vector, gender = "male" if is_male else "female" if is_male is False else None, age=age, country=country)
 
     if not rooms_id:
         return None
@@ -50,7 +51,7 @@ async def find_available_room(user_id, gender=None, age=None, country=None):
     room_id = random.choice(rooms_id)
     if room_id not in rooms:
         await VectorStorage.delete_room(room_id)
-        return find_available_room(user_id, gender, age, country)
+        return await find_available_room(user_id, is_male, age, country)
 
     await VectorStorage.delete_room(room_id)
 
@@ -68,13 +69,15 @@ async def save_room(user_id):
     if (today.month, today.day) < (user.birthdate.month, user.birthdate.day):
         age -= 1
 
-    await VectorStorage.save_vector(user_id, np.array(vector), str(user.is_male), age, user.country)
+    await VectorStorage.save_vector(user_id, np.array(vector), "male" if user.is_male else "female" if user.is_male is False else None, age, user.country)
 
 @router.post('/initiate_connection')
 async def initiate_connection(
+    params: SearchRoom,
     user_id: str = Depends(get_user_id)
 ):
-    room_id = await find_available_room(user_id)
+
+    room_id = await find_available_room(user_id, params.is_male, params.age, params.country)
 
     if not room_id:
         room_id = user_id
@@ -123,7 +126,7 @@ async def initiate_connection(
     @pc.on('iceconnectionstatechange')
     async def on_iceconnectionstatechange():
         if pc.iceConnectionState in ('failed', 'disconnected', 'closed'):
-            print(f'Client {pc.client_id} disconnected')
+            logger.info(f'Client {pc.client_id} disconnected')
             
             await remove_client_from_room(pc)
 
@@ -170,7 +173,7 @@ async def answer(request: Request):
         return JSONResponse(content={'error': 'Peer connection not found.'}, status_code=404)
 
     await pc.setRemoteDescription(answer)
-    print(f'Client {client_id} connected to room {room_id}')
+    logger.info(f'Client {client_id} connected to room {room_id}')
     await send_user_list(room_id)
     return JSONResponse(content={'message': 'Connection established.'})
 
