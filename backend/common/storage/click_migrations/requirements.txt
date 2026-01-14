@@ -1,3 +1,0 @@
-numpy
-clickhouse-connect
-pydantic-settings
