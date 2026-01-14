@@ -1,14 +1,13 @@
 version: '3.8'
 
+# TODO: вынести в конфиг
 services:
   backend:
     build: ./backend
     ports:
       - "8000:8000"
     volumes:
-      - .:/code  # Для разработки (hot reload)
-    environment:
-      - PYTHONPATH=/code
+      - .:/code
     restart: unless-stopped
     # healthcheck:
     #   test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -16,7 +15,6 @@ services:
     #   timeout: 10s
     #   retries: 3
 
-  # Раскомментируйте при добавлении БД
   # postgres:
   #   image: postgres:16
   #   environment:
