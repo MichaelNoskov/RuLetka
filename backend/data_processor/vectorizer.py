@@ -10,4 +10,6 @@ class Vectorizer:
         return embs
 
 model = Vectorizer()
-# print(model.generate_embedding('Жили были дед да баба'))
+
+if __name__ == "__main__":
+    print(model.generate_embedding('Жили были дед да баба'))

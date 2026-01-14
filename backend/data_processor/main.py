@@ -5,6 +5,7 @@ from handlers.event_distribution import handle_event_distribution
 from common.storage import rabbit
 from logger import logger
 
+
 async def message_handler(loop):
     queue_name = settings.MODEL_QUEUE
     async with rabbit.channel_pool.acquire() as channel:
@@ -19,6 +20,7 @@ async def message_handler(loop):
                 async with message.process():
                     body = msgpack.unpackb(message.body)
                     await handle_event_distribution(body)
+
 
 async def main():
     loop = asyncio.get_event_loop()
