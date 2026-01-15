@@ -35,3 +35,17 @@ async def login(
     )
 
     return UserResponse.from_domain(user)
+
+
+@router.get("/logout")
+async def logout(
+    response: Response,
+):
+    response.delete_cookie(
+        key=settings.COOKIE_NAME,
+        path="/"
+    )
+    
+    return {
+        "message": "Успешный выход",
+    }
