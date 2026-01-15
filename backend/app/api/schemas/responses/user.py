@@ -11,6 +11,7 @@ class UserResponse(BaseModel):
     birthdate: date
     country: str = Field(..., max_length=50)
     description: str = Field(..., max_length=500)
+    photo_url: str = Field(..., max_length=500)
 
     class Config:
         from_attributes = True
@@ -23,5 +24,6 @@ class UserResponse(BaseModel):
             is_male=user.is_male,
             birthdate=user.birthdate,
             country=user.country,
-            description=user.description
+            description=user.description,
+            photo_url=user.photo_url
         )

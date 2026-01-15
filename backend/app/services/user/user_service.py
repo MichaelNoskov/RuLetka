@@ -29,7 +29,8 @@ class UserService:
             birthdate=user_data.birthdate,
             country=user_data.country,
             description=user_data.description,
-            hashed_password=self.password_hasher.hash(user_data.password)
+            hashed_password=self.password_hasher.hash(user_data.password),
+            photo_url=f"https://ui-avatars.com/api/?background=random&name={user_data.username}"
         )
         return await self.user_repo.create(user)
     

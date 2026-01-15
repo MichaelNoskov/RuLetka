@@ -10,4 +10,5 @@ class User:
     country: str
     description: str
     hashed_password: str
+    photo_url: Optional[str] = None
     id: Optional[int] = None

@@ -20,7 +20,8 @@ class SQLAlchemyUserRepository(AbstractUserRepository):
             birthdate=db_user.birthdate,
             country=db_user.country,
             description=db_user.description or "",
-            hashed_password=db_user.password
+            hashed_password=db_user.password,
+            photo_url=db_user.photo_url
         )
     
     def _to_db(self, domain_user: User) -> UserModel:
@@ -30,7 +31,8 @@ class SQLAlchemyUserRepository(AbstractUserRepository):
             birthdate=domain_user.birthdate,
             country=domain_user.country,
             description=domain_user.description,
-            password=domain_user.hashed_password
+            password=domain_user.hashed_password,
+            photo_url=domain_user.photo_url
         )
     
     async def create(self, user: User) -> User:

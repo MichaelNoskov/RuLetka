@@ -29,3 +29,7 @@ class User(Base, IDMixin):
     description = Column(
         String(500)
     )
+    photo_url = Column(
+        String(500),
+        nullable=False
+    )
