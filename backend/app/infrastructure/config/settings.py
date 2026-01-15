@@ -7,6 +7,7 @@ class Settings(BaseSettings):
 
     FASTAPI_HOST: str
     FASTAPI_PORT: int
+    UVICORN_WORKERS: int = 1
 
     # TODO: вынести в secrets.py
     SECRET_KEY: str = "asfdslknfsdfsdfjksdlkjfkjdsfjskjfsjdfndsfnkjfnskjfskjfskjfk"
