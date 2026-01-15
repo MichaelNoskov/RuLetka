@@ -1,19 +1,26 @@
 from typing import Optional
+import io
+from PIL import Image
 
 from app.domain.models.user import User
 from app.domain.exceptions import *
 from app.api.schemas.requests.user import UserRegister, UserInfo
 from app.domain.ports.user_repository import AbstractUserRepository
 from app.domain.ports.password_hasher import AbstractPasswordHasher
+from app.domain.ports.file_storage import AbstractFileStorage
+from app.domain.exceptions import UserNotFoundError
+
 
 class UserService:
     def __init__(
         self,
         user_repo: AbstractUserRepository,
-        password_hasher: AbstractPasswordHasher
+        password_hasher: AbstractPasswordHasher,
+        avatar_storage: AbstractFileStorage
     ):
         self.user_repo = user_repo
         self.password_hasher = password_hasher
+        self.avatar_storage = avatar_storage
     
     async def register(self, user_data: UserRegister) -> User:
         if len(user_data.username) < 3:
@@ -58,3 +65,40 @@ class UserService:
         user.description = data.description
         
         return await self.user_repo.update(user)
+    
+    async def upload_avatar(self, user_id: int, image_bytes: bytes, 
+                                   size: tuple = (256, 256)) -> str:
+
+        user = await self.user_repo.get_by_id(user_id)
+        if not user:
+            raise UserNotFoundError("Пользователь не найден")
+    
+        try:
+            # TODO: вынести в отдельный репозиторий
+            image = Image.open(io.BytesIO(image_bytes))
+            image = image.convert('RGB')
+    
+            image.thumbnail(size, Image.Resampling.LANCZOS)
+
+            output = io.BytesIO()
+            image.save(output, format='JPEG', quality=85, optimize=True)
+            output.seek(0)
+        except Exception as e:
+            raise ValueError("Ошибка обработки изображения")
+        
+        file_url = await self.avatar_storage.save_file(f"avatar_{user_id}", output.read())
+        if not file_url:
+            raise NotFound("Файл не найден")
+
+        user.photo_url = file_url
+        await self.user_repo.update(user)
+
+        return file_url
+    
+    async def load_avatar(self, user_id: int) -> bytes:
+
+        user = await self.user_repo.get_by_id(user_id)
+        if not user:
+            raise UserNotFoundError("Пользователь не найден")
+        
+        return await self.avatar_storage.get_file(user.photo_url)

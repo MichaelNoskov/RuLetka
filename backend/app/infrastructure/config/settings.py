@@ -16,6 +16,13 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str = "postgres"
     POSTGRES_PORT: int = 5432
 
+    MINIO_API_PORT: int = 7000
+    MINIO_ENDPOINT: str = f"minio:{MINIO_API_PORT}"
+    MINIO_LOCAL_ENDPOINT: str = f"{FASTAPI_HOST}:{MINIO_API_PORT}"
+    MINIO_AVATAR_BUCKET: str = "pictures"
+    MINIO_ROOT_USER: str = "minioadmin"
+    MINIO_ROOT_PASSWORD: str = "minioadmin"
+
     HTTPS_ONLY: bool = False
 
     JWT_SECRET_KEY: str = "asfdslknfsdfsdfjksdlkjfkjdsfjskjfsjdfndsfnkjfnskjfskjfskjfk"

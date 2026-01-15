@@ -1,5 +1,6 @@
 
-from fastapi import Request, APIRouter, Depends, HTTPException, status
+from fastapi import Request, APIRouter, Depends, HTTPException, status, UploadFile, File
+
 from app.api.schemas.requests.user import UserInfo
 from app.api.schemas.responses.user import UserResponse
 from app.api.dependencies import get_user_service
@@ -45,3 +46,30 @@ async def update_profile(
 
     updated_user = await user_service.update_profile(user_id, user_data)
     return UserResponse.from_domain(updated_user)
+
+
+@router.post("/profile/image", status_code=status.HTTP_201_CREATED)
+async def upload_avatar(
+    file: UploadFile = File(...),
+    user_id: int = Depends(get_current_user_id),
+    user_service=Depends(get_user_service)
+):
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Файл должен быть изображением"
+        )
+
+    try:
+        contents = await file.read()
+        avatar_url = await user_service.upload_avatar(user_id, contents)
+
+        return {
+            "avatar_url": avatar_url,
+            "message": "Фото профиля успешно загружено"
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Не получилось загрузить аватар"
+        )

@@ -8,3 +8,6 @@ psycopg2-binary
 pydantic-settings
 alembic
 passlib
+minio
+pillow
+python-multipart

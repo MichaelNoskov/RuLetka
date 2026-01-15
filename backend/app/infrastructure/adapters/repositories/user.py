@@ -61,6 +61,7 @@ class SQLAlchemyUserRepository(AbstractUserRepository):
         db_user.country = user.country
         db_user.description = user.description
         db_user.password = user.hashed_password
+        db_user.photo_url = user.photo_url
         
         await self.session.commit()
         await self.session.refresh(db_user)
