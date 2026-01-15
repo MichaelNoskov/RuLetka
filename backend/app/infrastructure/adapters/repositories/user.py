@@ -13,6 +13,14 @@ class SQLAlchemyUserRepository(AbstractUserRepository):
         # TODO: реализация с SQLAlchemy
         return user
     
+    async def update(self, user: User) -> User:
+        # TODO: Реализация обновления данных пользователя
+        return user
+    
+    async def get_by_id(self, user_id: str) -> Optional[User]:
+        # TODO: Реализация поиска
+        pass
+    
     async def get_by_username(self, username: str) -> Optional[User]:
         # TODO: Реализация поиска
         model_username = "Michael"
