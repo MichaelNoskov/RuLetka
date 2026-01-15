@@ -4,4 +4,6 @@ sqlalchemy
 uvicorn
 aiosqlite
 asyncpg
+psycopg2-binary
 pydantic-settings
+alembic
