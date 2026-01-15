@@ -4,7 +4,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from typing import Callable
 
 from app.domain.ports.token_provider import AbstractTokenProvider
-from app.domain.ports.user_repository import AbstractUserRepository
+# from app.domain.ports.user_repository import AbstractUserRepository
 from app.infrastructure.config.settings import settings
 
 
@@ -14,12 +14,12 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         self,
         app,
         token_provider: AbstractTokenProvider,
-        user_repository: AbstractUserRepository,
+        # user_repository: AbstractUserRepository,
         public_paths: list[str] = None
     ):
         super().__init__(app)
         self.token_provider = token_provider
-        self.user_repository = user_repository
+        # self.user_repository = user_repository
         self.public_paths = public_paths or [
             '/docs',
             '/openapi.json',
@@ -54,6 +54,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
                 content={'detail': 'Токен не валиден'}
             )
 
+        # TODO: и такое тоже может быть
         # user = await self.user_repository.get_by_id(user_id)
         # if not user:
         #     return JSONResponse(
