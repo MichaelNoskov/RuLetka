@@ -1,5 +1,4 @@
 from uuid import uuid4
-from contextlib import asynccontextmanager
 from asyncpg import Connection
 from sqlalchemy import NullPool
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
