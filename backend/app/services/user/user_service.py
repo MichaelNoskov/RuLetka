@@ -1,9 +1,9 @@
 from typing import Optional
 import hashlib
-from app.domain.models import User
+from app.domain.models.user import User
 from app.domain.exceptions import *
 from app.api.schemas.requests.user import UserRegister, UserInfo
-from app.adapters.repositories.user import AbstractUserRepository
+from app.domain.ports.user_repository import AbstractUserRepository
 
 class UserService:
     def __init__(self, user_repo: AbstractUserRepository):
@@ -43,7 +43,7 @@ class UserService:
         """Обновить профиль пользователя"""
         user = await self.user_repo.get_by_id(user_id)
         if not user:
-            raise ValueError("Пользователь не найден")
+            raise UserNotFoundError("Пользователь не найден")
 
         user.username = data.username
         user.is_male = data.is_male
@@ -55,4 +55,5 @@ class UserService:
     
     def _hash_password(self, password: str) -> str:
         """Хеширование пароля"""
+        # TODO: использовать другой способ, этот небезопасен
         return hashlib.sha256(password.encode()).hexdigest()

@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import date
-from app.domain.models import User
+from app.domain.models.user import User
 from app.api.schemas.requests.user import UserInfo
 
 class UserResponse(BaseModel):

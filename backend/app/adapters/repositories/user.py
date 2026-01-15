@@ -1,13 +1,9 @@
-from abc import ABC, abstractmethod
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.domain.models import User
 
-class AbstractUserRepository(ABC):
-    @abstractmethod
-    async def create(self, user: User) -> User: ...
-    @abstractmethod
-    async def get_by_username(self, username: str) -> Optional[User]: ...
+from app.domain.ports.user_repository import AbstractUserRepository
+from app.domain.models.user import User
+
 
 class SQLAlchemyUserRepository(AbstractUserRepository):
     def __init__(self, session: AsyncSession):
