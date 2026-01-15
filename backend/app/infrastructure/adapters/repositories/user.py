@@ -4,6 +4,7 @@ from sqlalchemy import select
 
 from app.domain.ports.user_repository import AbstractUserRepository
 from app.domain.models.user import User
+from app.domain.exceptions import UserNotFoundError
 from app.infrastructure.database.models.user import User as UserModel
 
 
@@ -43,14 +44,14 @@ class SQLAlchemyUserRepository(AbstractUserRepository):
 
     async def update(self, user: User) -> User:
         if not user.id:
-            raise ValueError("Пользователь ещё не сохранён в бд")
+            raise UserNotFoundError("Пользователь ещё не сохранён в бд")
 
         stmt = select(UserModel).where(UserModel.id == user.id)
         result = await self.session.execute(stmt)
         db_user = result.scalar_one_or_none()
 
         if not db_user:
-            raise ValueError(f"User with id {user.id} not found")
+            raise UserNotFoundError("Пользователь не найден")
 
         db_user.username = user.username
         db_user.is_male = user.is_male

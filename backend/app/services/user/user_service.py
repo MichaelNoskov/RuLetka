@@ -35,13 +35,15 @@ class UserService:
     
     async def login(self, username: str, password: str) -> Optional[User]:
         user = await self.user_repo.get_by_username(username)
-        print(user, flush=True)
         if not user or not self.password_hasher.verify(password, user.hashed_password):
             raise InvalidPasswordError("Неправильный логин или пароль")
         return user
 
     async def get_profile(self, user_id: int) -> Optional[User]:
         return await self.user_repo.get_by_id(user_id)
+    
+    async def get_by_username(self, username: str) -> Optional[User]:
+        return await self.user_repo.get_by_username(username)
     
     async def update_profile(self, user_id: int, data: UserInfo) -> User:
         user = await self.user_repo.get_by_id(user_id)
