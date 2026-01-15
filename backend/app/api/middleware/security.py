@@ -3,15 +3,21 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from typing import Callable
 
+from app.domain.ports.token_provider import AbstractTokenProvider
 from app.infrastructure.config.settings import settings
-from app.infrastructure.adapters.auth import verify_token
 
 
 class SecurityMiddleware(BaseHTTPMiddleware):
     
-    def __init__(self, app):
+    def __init__(
+        self,
+        app,
+        token_provider: AbstractTokenProvider,
+        public_paths: list[str] = None
+    ):
         super().__init__(app)
-        self.public_paths = [
+        self.token_provider = token_provider
+        self.public_paths = public_paths or [
             '/docs',
             '/openapi.json',
             '/auth/login',
@@ -23,10 +29,16 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         if request.url.path in self.public_paths:
             return await call_next(request)
 
-        token = request.cookies.get(settings.COOKIE_NAME)
+        token = self._get_token_from_request(request)
+        if not token:
+            return JSONResponse(
+                status_code=401,
+                content={"detail": "Необходима авторизация"}
+            )
         
         try:
-            payload = verify_token(token)
+            payload = self.token_provider.verify(token)
+            request.state.user_id = int(payload.get("sub"))
             # request.state.user_roles = payload.get("roles", [])
             # request.state.user_id = payload.get("sub")
             # request.state.permissions = []
@@ -36,7 +48,18 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         except Exception as exc:
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                content={'Error': 'Необходима авторизация'}
+                content={'detail': 'Токен не валиден'}
             )
         
         return await call_next(request)
+
+    def _get_token_from_request(self, request: Request) -> str | None:
+        token = request.cookies.get(settings.COOKIE_NAME)
+        if token:
+            return token
+
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            return auth_header[7:]
+
+        return None

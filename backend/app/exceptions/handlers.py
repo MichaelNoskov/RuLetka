@@ -17,3 +17,7 @@ def add_exception_handlers(app: FastAPI):
     @app.exception_handler(InvalidPasswordError)
     async def invalid_credentials_handler(request, exc: InvalidPasswordError):
         raise HTTPException(status_code=401, detail=str(exc))
+    
+    @app.exception_handler(NotAuthenticatedError)
+    async def invalid_credentials_handler(request, exc: NotAuthenticatedError):
+        raise HTTPException(status_code=401, detail=str(exc))

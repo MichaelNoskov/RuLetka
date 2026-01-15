@@ -4,3 +4,4 @@ class UsernameTooShortError(DomainError): pass
 class UserAlreadyExistsError(DomainError): pass
 class UserNotFoundError(DomainError): pass
 class InvalidPasswordError(DomainError): pass
+class NotAuthenticatedError(DomainError): pass
