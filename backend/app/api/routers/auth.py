@@ -32,7 +32,7 @@ async def login(
         value=token,
         samesite="Lax",
         httponly=True,
-        secure=False  # TODO: вынести в конфиг
+        secure=settings.HTTPS_ONLY
     )
 
     return UserResponse.from_domain(user)
