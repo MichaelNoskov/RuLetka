@@ -3,7 +3,8 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from typing import Callable
 
-from app.adapters.auth import verify_token
+from app.infrastructure.adapters.auth import verify_token
+
 
 class SecurityMiddleware(BaseHTTPMiddleware):
     
