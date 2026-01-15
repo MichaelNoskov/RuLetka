@@ -4,6 +4,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from typing import Callable
 
 from app.domain.ports.token_provider import AbstractTokenProvider
+from app.domain.ports.user_repository import AbstractUserRepository
 from app.infrastructure.config.settings import settings
 
 
@@ -13,10 +14,12 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         self,
         app,
         token_provider: AbstractTokenProvider,
+        user_repository: AbstractUserRepository,
         public_paths: list[str] = None
     ):
         super().__init__(app)
         self.token_provider = token_provider
+        self.user_repository = user_repository
         self.public_paths = public_paths or [
             '/docs',
             '/openapi.json',
@@ -38,7 +41,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         
         try:
             payload = self.token_provider.verify(token)
-            request.state.user_id = int(payload.get("sub"))
+            user_id = int(payload.get("sub"))
             # request.state.user_roles = payload.get("roles", [])
             # request.state.user_id = payload.get("sub")
             # request.state.permissions = []
@@ -50,6 +53,15 @@ class SecurityMiddleware(BaseHTTPMiddleware):
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 content={'detail': 'Токен не валиден'}
             )
+
+        # user = await self.user_repository.get_by_id(user_id)
+        # if not user:
+        #     return JSONResponse(
+        #         status_code=401,
+        #         content={"detail": "Пользователь не найден"}
+        #     )
+        
+        request.state.user_id = user_id
         
         return await call_next(request)
 
