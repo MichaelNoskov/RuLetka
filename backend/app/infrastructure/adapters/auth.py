@@ -1,13 +1,14 @@
 from jose import JWTError, jwt
 
+from app.infrastructure.config.settings import settings
+
 
 def verify_token(token: str) -> dict:
     try:
-        # TODO: вынести в конфиг
         payload = jwt.decode(
             token,
-            "asfdslknfsdfsdfjksdlkjfkjdsfjskjfsjdfndsfnkjfnskjfskjfskjfk",
-            algorithms=["HS256"]
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM]
         )
         return payload
     except JWTError:

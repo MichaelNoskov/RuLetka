@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from typing import Callable
 
+from app.infrastructure.config.settings import settings
 from app.infrastructure.adapters.auth import verify_token
 
 
@@ -21,9 +22,8 @@ class SecurityMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: Callable):
         if request.url.path in self.public_paths:
             return await call_next(request)
-        
-        # TODO: вынести в конфиг
-        token = request.cookies.get("access_token")
+
+        token = request.cookies.get(settings.COOKIE_NAME)
         
         try:
             payload = verify_token(token)
