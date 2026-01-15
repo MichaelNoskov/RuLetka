@@ -23,6 +23,7 @@ async def login(
     token_provider=Depends(get_token_provider),
     response: Response = None
 ):
+    # TODO: вынести в usecase
     user = await user_service.login(credentials.username, credentials.password)
     token = token_provider.create(str(user.id))
     response.set_cookie(
@@ -41,6 +42,7 @@ async def login(
 async def logout(
     response: Response,
 ):
+    # TODO: вынести в usecase
     response.delete_cookie(
         key=settings.COOKIE_NAME,
         path="/"
