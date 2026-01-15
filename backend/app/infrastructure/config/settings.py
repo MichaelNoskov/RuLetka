@@ -3,18 +3,18 @@ from pydantic_settings import BaseSettings
 
 # TODO: вынести часть переменных в secrets.py
 class Settings(BaseSettings):
-    BACKEND_HOST: str
-    BACKEND_PORT: int
+    BACKEND_HOST: str = "backend"
+    BACKEND_PORT: int = 8000
 
-    FASTAPI_HOST: str
-    FASTAPI_PORT: int
+    FASTAPI_HOST: str = "localhost"
+    FASTAPI_PORT: int = 8000
     UVICORN_WORKERS: int = 1
 
-    DB_HOST: str
-    POSTGRES_DB: str
-    POSTGRES_USER: str
-    POSTGRES_PASSWORD: str
-    POSTGRES_PORT: int
+    DB_HOST: str = "localhost"
+    POSTGRES_DB: str = "postgres"
+    POSTGRES_USER: str = "postgres"
+    POSTGRES_PASSWORD: str = "postgres"
+    POSTGRES_PORT: int = 5432
 
     SECRET_KEY: str = "asfdslknfsdfsdfjksdlkjfkjdsfjskjfsjdfndsfnkjfnskjfskjfskjfk"
     ALGORITHM: str = "HS256"

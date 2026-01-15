@@ -1,5 +1,7 @@
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.schema import MetaData
+from sqlalchemy import Column, Integer
+from sqlalchemy.ext.declarative import declared_attr
 
 
 NAMING_CONVENTION = {
@@ -19,3 +21,9 @@ metadata = MetaData(naming_convention=NAMING_CONVENTION, schema=DEFAULT_SCHEMA)
 class Base(DeclarativeBase):
     metadata = metadata
     __table_args__ = {'schema': DEFAULT_SCHEMA}
+
+
+class IDMixin:
+    @declared_attr
+    def id(cls):
+        return Column(Integer, primary_key=True, autoincrement=True, index=True)

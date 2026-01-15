@@ -19,3 +19,7 @@ class AbstractUserRepository(ABC):
     @abstractmethod
     async def get_by_id(self, user_id: int) -> Optional[User]:
         pass
+
+    @abstractmethod
+    async def delete(self, user_id: int) -> bool:
+        pass

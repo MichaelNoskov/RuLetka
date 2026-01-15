@@ -4,6 +4,8 @@ from sqlalchemy import NullPool
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 from typing_extensions import AsyncGenerator
 
+from app.infrastructure.config.settings import settings
+
 
 class CConnection(Connection):
     def _get_unique_id(self, prefix: str) -> str:
@@ -11,9 +13,8 @@ class CConnection(Connection):
 
 
 def create_engine() -> AsyncEngine:
-    # TODO: вынести в конфиг
     return create_async_engine(
-        f'postgresql+asyncpg://postgres:postgres@postgres:5432/postgres',
+        settings.db_url,
         poolclass=NullPool,
         connect_args={
             'connection_class': CConnection,
