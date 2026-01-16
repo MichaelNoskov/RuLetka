@@ -1,5 +1,6 @@
 import './styles.css';
 import { genders, countries, interests, appRoutes, URLs } from '../../const';
+import { useAvatar } from '../../hooks/useAvatar';
 import mouse from '../../static/mouse.jpg'
 
 import { useState, useEffect } from 'react';
@@ -17,6 +18,7 @@ import Checkbox from '@mui/material/Checkbox';
 import Button from '@mui/material/Button';
 import Skeleton from '@mui/material/Skeleton';
 import Alert from '@mui/material/Alert';
+import Avatar from '@mui/material/Avatar';
 
 import VideoCameraFrontIcon from '@mui/icons-material/VideoCameraFront';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -26,12 +28,8 @@ import CheckIcon from '@mui/icons-material/Check';
 
 const theme = createTheme({
     palette: {
-        primary: {
-            main: '#7394EE',
-        },
-        secondary: {
-            main: '#EF8666'
-        }
+        primary: { main: '#7394EE' },
+        secondary: { main: '#EF8666' }
     },
 });
 
@@ -104,6 +102,8 @@ export default function ProfilePage() {
         description: '',
     });
 
+    const { avatarUrl, avatarLoading, handleAvatarClick } = useAvatar();
+
     const toggleInterest = (value) => {
         setSelectedInterests((prev) =>
             prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
@@ -119,7 +119,7 @@ export default function ProfilePage() {
         console.log('clear user')
 
         try {
-            const response = await fetch(`${URLs.backendHost}/api/logout`, {
+            const response = await fetch(`${URLs.backendHost}/auth/logout`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -153,10 +153,18 @@ export default function ProfilePage() {
         // formData.append('interests', JSON.stringify(selectedInterests));
 
         try {
-            const response = await fetch(`${URLs.backendHost}/api/user/`, {
-                method: 'POST',
-                body: formData,
-                credentials: 'include',
+            const response = await fetch(`${URLs.backendHost}/api/profile/`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    username: form.username,
+                    is_male: form.is_male,
+                    birthdate: form.birthdate,
+                    country: form.country,
+                    description: form.description
+                }),
             });
 
             const data = await response.json();
@@ -180,40 +188,34 @@ export default function ProfilePage() {
     useEffect(() => {
         const fetchUserData = async () => {
             try {
-                const response = await fetch(`${URLs.backendHost}/api/user/`, {
+                const userResponse = await fetch(`${URLs.backendHost}/api/user/`, {
                     method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
                 });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+    
+                if (userResponse.ok) {
+                    const data = await userResponse.json();
+                    const userData = {
+                        username: data.username || '',
+                        is_male: data.is_male !== null ? data.is_male : true,
+                        birthdate: data.birthdate || '',
+                        country: data.country || '',
+                        description: data.description || '',
+                    };
+                    setForm(userData);
+                    setFormInitial(userData);
                 }
-
-                const data = await response.json();
-                const userData = {
-                    username: data.username || '',
-                    is_male: data.is_male !== null ? data.is_male : true,
-                    birthdate: data.birthdate || '',
-                    country: data.country || '',
-                    description: data.description || '',
-                    // selectedInterests: data.interests || [], 
-                };
-
-                setForm(userData)
-                setFormInitial(userData)
-                setIsLoading(false)
-                //setSelectedInterests(userData.interests || []);
-
+                setIsLoading(false);
+    
             } catch (error) {
-                console.error("Could not fetch user data:", error);
+                console.error("Ошибка загрузки данных:", error);
+                setIsLoading(false);
             }
         };
-
-        fetchUserData()
-    }, []);
+    
+        fetchUserData();
+    }, []);  
 
     function arraysEqual(a, b) {
         if (a === b) return true;
@@ -238,13 +240,55 @@ export default function ProfilePage() {
           form.description !== formInitial.description ||
           !arraysEqual(selectedInterests, selectedInterestsInitial)
         );
-    };
+    };    
 
     return (
         <ThemeProvider theme={theme}>
             <Container className="profile-container">
                 <Box className="header-container">
-                    <p className="profile-title">Профиль</p>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        {avatarLoading ? (
+                            <Skeleton variant="circular" width={50} height={50} />
+                        ) : (
+                            <Avatar 
+                                src={avatarUrl || undefined} 
+                                alt={form.username}
+                                onClick={handleAvatarClick}
+                                sx={{ 
+                                    width: 50, 
+                                    height: 50,
+                                    bgcolor: 'primary.main',
+                                    cursor: 'pointer',
+                                    '&:hover': {
+                                        filter: 'brightness(0.7)',
+                                        transition: 'all 0.2s ease'
+                                    }
+                                }}
+                            >
+                            {form.username ? form.username.charAt(0).toUpperCase() : '?'}
+                        </Avatar>
+                        )}
+
+                        {isLoading ? (
+                            <Skeleton variant="text" width={240} height={50} />
+                        ) : (
+                            <TextField
+                            name="username"
+                            onChange={handleChange}
+                            value={form.username}
+                            variant="standard"
+                            sx={{
+                                '& .MuiInput-underline:before': {
+                                    borderBottomColor: 'rgba(255,255,255,0.5)'
+                                },
+                                '& .MuiInputBase-input': {
+                                    fontSize: '24px',
+                                    fontWeight: 'bold',
+                                }
+                            }}
+                            />
+                        )}
+                    </Box>
                     <Box>
                         <NavLink to={appRoutes.main}>
                             <Button
@@ -290,20 +334,11 @@ export default function ProfilePage() {
                                     <Skeleton variant="rectangular" width={290} height={40} />
                                     <Skeleton variant="rectangular" width={290} height={40} />
                                     <Skeleton variant="rectangular" width={290} height={40} />
-                                    <Skeleton variant="rectangular" width={290} height={40} />
                                     <p className="interests-title">Расскажите о себе</p>
                                     <Skeleton variant="rectangular" width={290} height={175} />
                                 </>
                             ) : (
                                 <>
-                                <TextField
-                                    name="username"
-                                    onChange={handleChange}
-                                    value={form.username}
-                                    className="text-field"
-                                    label="Имя"
-                                    size="small"
-                                />
                                 <TextField
                                     name="is_male"
                                     onChange={handleChange}

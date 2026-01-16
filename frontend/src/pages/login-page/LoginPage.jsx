@@ -55,16 +55,15 @@ export default function LoginPage() {
         console.log('login attempt')
 
         try {
-            const formData = new URLSearchParams();
-            formData.append('username', form.username);
-            formData.append('password', form.password);
-
             const response = await fetch(`${URLs.backendHost}/auth/login`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Content-Type': 'application/json',
                 },
-                body: formData.toString(),
+                body: JSON.stringify({
+                    username: form.username,
+                    password: form.password
+                }),
                 credentials: 'include',
             });
 

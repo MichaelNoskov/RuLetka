@@ -6,6 +6,11 @@ import NotFoundPage from './pages/not-found-page/NotFoundPage.jsx';
 import CheckAuth from './components/check-auth/CheckAuth.jsx';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { appRoutes } from './const.js';
+import axios from 'axios';
+
+axios.defaults.withCredentials = true;
+axios.defaults.xsrfHeaderName = 'X-CSRFToken';
+axios.defaults.xsrfCookieName = 'csrftoken';
 
 function App() {
   return (

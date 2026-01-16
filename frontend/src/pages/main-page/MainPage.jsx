@@ -1,6 +1,7 @@
 import './styles.css';
 import { genders, countries, appRoutes } from '../../const';
-import { initiateConnection, disconnect, toggleAudioMute, toggleVideoMute } from '../../services/client';
+import { useAvatar } from '../../hooks/useAvatar';
+import { initiateConnection, disconnect, toggleAudioMute, toggleVideoMute, loadRemoteAvatar } from '../../services/client';
 
 import React, { useState, useEffect, useRef } from 'react';
 import { NavLink } from 'react-router-dom';
@@ -13,6 +14,7 @@ import MenuItem from '@mui/material/MenuItem';
 import IconButton from '@mui/material/IconButton';
 import Button from '@mui/material/Button';
 import Avatar from '@mui/material/Avatar';
+import Skeleton from '@mui/material/Skeleton';
 // import Rating from '@mui/material/Rating';
 
 import CallIcon from '@mui/icons-material/Call';
@@ -41,6 +43,8 @@ const MainPage = function(){
     const [IsMuteAudio, SetIsMuteAudio] = useState(false);
     const localVideoRef = useRef(null);
     const remoteVideoRef = useRef(null);
+    const myAvatar = useAvatar();
+    const [remoteAvatarUrl, setRemoteAvatarUrl] = useState('');
 
     const [searchForm, setSearchForm] = useState({
         country: '',
@@ -106,6 +110,47 @@ const MainPage = function(){
         }
     }, [IsMuteVideo, isCalling]);
 
+    useEffect(() => {
+        window.onRemoteUserConnected = async (remoteUserId) => {
+            console.log('🎯 Получен ID собеседника:', remoteUserId);
+            
+            // Загружаем аватар собеседника
+            const avatarBlobUrl = await loadRemoteAvatar(remoteUserId);
+            setRemoteAvatarUrl(avatarBlobUrl || '');
+        };
+        
+        return () => {
+            window.onRemoteUserConnected = null;
+        };
+    }, []);
+
+    const getAvatarFallback = (isRemote = false) => {
+        if (isRemote && myAvatar.avatarLoading) {
+            return (
+                <Skeleton 
+                    variant="circular" 
+                    sx={{ width: 350, height: 350 }} 
+                />
+            );
+        }
+        if (!isRemote && myAvatar.avatarLoading) {
+            return (
+                <Skeleton 
+                    variant="circular" 
+                    sx={{ width: 100, height: 100 }} 
+                />
+            );
+        }
+        return (
+            <PersonIcon 
+                sx={{ 
+                    color: isRemote ? '#CE9595' : '#9599CE',
+                    fontSize: isRemote ? 250 : 65 
+                }} 
+            />
+        );
+    };
+
     return (
         <ThemeProvider theme={theme}>
             {/* <Box className="rating-box">
@@ -120,15 +165,34 @@ const MainPage = function(){
             <Box className="centered-container">
                 <Box className="aspect-ratio-box">
                     <Box className="video-container-focus">
-                        <Avatar sx={{ bgcolor: '#FFF6EE', width: 350, height: 350, position: 'absolute' }}>
-                            <PersonIcon sx={{ color: '#CE9595', fontSize: 250 }} />
+                        {/* ✅ Собеседник - пока иконка */}
+                        <Avatar 
+                            src={remoteAvatarUrl || undefined}
+                            sx={{ 
+                                bgcolor: '#FFF6EE', 
+                                width: 350, 
+                                height: 350, 
+                                position: 'absolute' 
+                            }}
+                        >
+                            {getAvatarFallback(true)}
                         </Avatar>
                         <div id="audioContent"></div>
                         <video id="remoteVideo" ref={remoteVideoRef} autoPlay className='video'></video>
                     </Box>
+                    
                     <Box className="video-container-mini">
-                        <Avatar sx={{ bgcolor: '#EEF5FF', width: 100, height: 100, position: 'absolute'  }}>
-                            <PersonIcon sx={{ color: '#9599CE', fontSize: 65 }} />
+                        {/* ✅ Свой аватар */}
+                        <Avatar 
+                            src={myAvatar.avatarUrl || undefined}
+                            sx={{ 
+                                bgcolor: '#EEF5FF', 
+                                width: 100, 
+                                height: 100, 
+                                position: 'absolute' 
+                            }}
+                        >
+                            {getAvatarFallback(false)}
                         </Avatar>
                         <video id="localVideo" ref={localVideoRef} autoPlay muted className='video'></video>
                     </Box>
