@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Optional
 import os
 
-from app.domain.ports.static_file_loader import AbstractStaticFileLoader
+from app.core.ports.services.static_file_loader import AbstractStaticFileLoader
 
 
 class FileSystemStaticFileLoader(AbstractStaticFileLoader):

@@ -3,7 +3,7 @@ import secrets
 from typing import Optional
 from urllib.parse import quote
 
-from app.domain.ports.avatar_provider import AbstractAvatarProvider
+from app.core.ports.services.avatar_provider import AbstractAvatarProvider
 
 
 class DiceBearBotttsProvider(AbstractAvatarProvider):

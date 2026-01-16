@@ -31,6 +31,8 @@ class Settings(BaseSettings):
 
     COOKIE_NAME: str = "access_token"
 
+    STATIC_DIR: str = "static"
+
     @property
     def db_url(self) -> str:
         return f'postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.DB_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}'

@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from pydantic.types import PastDate
 
+
 class UserLogin(BaseModel):
     username: str = Field(..., max_length=50)
     password: str = Field(..., min_length=8, max_length=128)

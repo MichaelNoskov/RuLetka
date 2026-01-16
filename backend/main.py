@@ -3,14 +3,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routers.auth import router as auth_router
-from app.api.routers.experience import router as expirience_router
-from app.api.middleware import setup_security_middleware
-from app.infrastructure.adapters.repositories.jwt_provider import JWTTokenProvider
-from app.infrastructure.external.fs_static_file_loader import FileSystemStaticFileLoader
-from app.infrastructure.adapters.repositories.minio_file_storage import MinIOFileStorage
+from app.api.routers.user import router as user_router
+from app.infrastructure.web.middleware.security import AuthenticationMiddleware
 from app.infrastructure.config.settings import settings
-from app.services.static_resource_initializer import StaticResourceInitializer
-from app.exceptions.handlers import add_exception_handlers
+from app.api.exceptions.handlers import register_exception_handlers
+from app.infrastructure.initializers.static_resource_initializer import StaticResourceInitializer
 
 
 @asynccontextmanager
@@ -18,23 +15,13 @@ async def lifespan(app: FastAPI):
     print("Запуск инициализации приложения...", flush=True)
     
     try:
-        static_loader = FileSystemStaticFileLoader(static_dir="static")
-        avatar_storage = MinIOFileStorage(bucket_name=settings.MINIO_AVATAR_BUCKET)
-        initializer = StaticResourceInitializer(static_loader, avatar_storage)
+        static_initializer = StaticResourceInitializer()
+        static_initializer.initialize()
         
-        print("Инициализация дефолтного аватара в MinIO...", flush=True)
-        success = await initializer.initialize_default_avatar()
+        print("Статические ресурсы инициализированы", flush=True)
         
-        if success:
-            print("Дефолтный аватар находится в MinIO", flush=True)
-            app.state.default_avatar_filename = initializer.get_default_avatar_filename()
-        else:
-            print("Ошибка загрузки дефолтного аватара", flush=True)
-            app.state.default_avatar_filename = "default_avatar.jpg"
-            
     except Exception as e:
         print(f"Ошибка при инициализации: {e}", flush=True)
-        app.state.default_avatar_filename = "default_avatar.jpg"
     
     yield
 
@@ -43,24 +30,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-app.include_router(auth_router, prefix="/auth")
-app.include_router(expirience_router, prefix="/api")
-
-token_provider = JWTTokenProvider(
-    secret_key=settings.JWT_SECRET_KEY,
-    algorithm=settings.JWT_ALGORITHM
-)
-setup_security_middleware(
-    app=app,
-    token_provider=token_provider,
-    public_paths=[
-        '/docs',
-        '/openapi.json',
-        '/auth/login',
-        '/auth/register',
-        '/api/hobbies',
-    ]
-)
+app.add_middleware(AuthenticationMiddleware)
 
 # TODO: вынести в конфиг
 origins = [
@@ -74,4 +44,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-add_exception_handlers(app)
+register_exception_handlers(app)
+
+app.include_router(auth_router, prefix="/auth", tags=["auth"])
+app.include_router(user_router, prefix="/api", tags=["user"])
