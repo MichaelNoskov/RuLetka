@@ -19,11 +19,13 @@ class UserService:
         password_hasher: AbstractPasswordHasher,
         avatar_storage: AbstractFileStorage,
         avatar_provider: AbstractAvatarProvider,
+        default_avatar_filename: str = "default_avatar.jpg"
     ):
         self.user_repo = user_repo
         self.password_hasher = password_hasher
         self.avatar_storage = avatar_storage
         self.avatar_provider = avatar_provider
+        self.default_avatar_filename = default_avatar_filename
     
     async def register(self, user_data: UserRegister) -> User:
         if len(user_data.username) < 3:
@@ -33,7 +35,6 @@ class UserService:
         if existing:
             raise UserAlreadyExistsError("Пользователь уже существует")
 
-        # TODO: загрузку в minio default avatar из статиков при запуске
         user = User(
             username=user_data.username,
             is_male=user_data.is_male,
@@ -41,7 +42,7 @@ class UserService:
             country=user_data.country,
             description=user_data.description,
             hashed_password=self.password_hasher.hash(user_data.password),
-            photo_url="default"
+            photo_url=self.default_avatar_filename
         )
 
         created_user = await self.user_repo.create(user)
