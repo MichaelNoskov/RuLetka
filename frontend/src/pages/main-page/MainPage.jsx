@@ -165,7 +165,6 @@ const MainPage = function(){
             <Box className="centered-container">
                 <Box className="aspect-ratio-box">
                     <Box className="video-container-focus">
-                        {/* ✅ Собеседник - пока иконка */}
                         <Avatar 
                             src={remoteAvatarUrl || undefined}
                             sx={{ 
@@ -182,7 +181,6 @@ const MainPage = function(){
                     </Box>
                     
                     <Box className="video-container-mini">
-                        {/* ✅ Свой аватар */}
                         <Avatar 
                             src={myAvatar.avatarUrl || undefined}
                             sx={{ 

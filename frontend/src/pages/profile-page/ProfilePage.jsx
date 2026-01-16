@@ -143,15 +143,7 @@ export default function ProfilePage() {
         setSaveLoading(true);
         setSaveSuccess(false);
         setSaveError('');
-
-        const formData = new FormData();
-        formData.append('username', form.username);
-        formData.append('is_male', form.is_male);
-        formData.append('birthdate', form.birthdate);
-        formData.append('country', form.country);
-        formData.append('description', form.description);
-        // formData.append('interests', JSON.stringify(selectedInterests));
-
+    
         try {
             const response = await fetch(`${URLs.backendHost}/api/profile/`, {
                 method: 'PUT',
@@ -165,25 +157,37 @@ export default function ProfilePage() {
                     country: form.country,
                     description: form.description
                 }),
+                credentials: 'include',
             });
-
+    
             const data = await response.json();
-
+    
             if (!response.ok) {
                 throw new Error(data.detail || 'Ошибка при изменении');
             }
-
-            setFormInitial({ ...form });
+    
+            const updatedUserData = {
+                username: data.username || form.username,
+                is_male: data.is_male !== null ? data.is_male : form.is_male,
+                birthdate: data.birthdate || form.birthdate,
+                country: data.country || form.country,
+                description: data.description || form.description,
+            };
+            
+            setForm(updatedUserData);
+            setFormInitial(updatedUserData);
             setSelectedInterestsInitial(selectedInterests);
             setSaveSuccess(true);
             setTimeout(() => setSaveSuccess(false), 2000);
+            
         } catch (err) {
-            console.log(err);
+            console.error('Ошибка сохранения:', err);
             setSaveError(err.message || 'Не удалось сохранить изменения');
         } finally {
             setSaveLoading(false);
         }
     }
+    
 
     useEffect(() => {
         const fetchUserData = async () => {

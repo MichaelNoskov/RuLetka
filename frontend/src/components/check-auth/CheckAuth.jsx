@@ -1,23 +1,64 @@
 import Cookies from 'js-cookie';
+import { useNavigate } from "react-router";
+import { appRoutes } from "../../const";
+import { useEffect, useState } from "react";
 
-import { useNavigate } from "react-router"
-import { appRoutes } from "../../const"
-import { useEffect } from "react"
+const CheckAuth = ({ children }) => {
+    const navigate = useNavigate();
+    const [isChecking, setIsChecking] = useState(true);
+    const [isAuthorized, setIsAuthorized] = useState(false);
+    
+    // Имя куки из settings.COOKIE_NAME (замени на реальное!)
+    const COOKIE_NAME = 'access_token'; 
 
-const CheckAuth = function({children}){
-    const token = Cookies.get('access_token');
-    const navigate = useNavigate()
+    useEffect(() => {
+        const checkAuth = async () => {
+            const token = Cookies.get(COOKIE_NAME);
+            
+            if (!token) {
+                console.log('unauthorized: no token');
+                setIsChecking(false);
+                navigate(appRoutes.login, { replace: true });
+                return;
+            }
 
-    useEffect(()=>{
-        if (token === undefined) {
-            console.log('unauthorized')
-            navigate(appRoutes.login)
-        }
-    }, [navigate, token])
+            // Проверяем токен через защищенный API
+            try {
+                const response = await fetch('/api/user/', {
+                    method: 'GET',
+                    credentials: 'include', // Отправляем httponly куки
+                });
 
-    if (token) {console.log(`login successful! token: ${token}`)}
+                if (response.ok) {
+                    console.log('✅ authorized: token valid');
+                    setIsAuthorized(true);
+                } else {
+                    console.log('❌ unauthorized: token invalid');
+                    Cookies.remove(COOKIE_NAME);
+                }
+            } catch (error) {
+                console.log('❌ unauthorized: check failed');
+                Cookies.remove(COOKIE_NAME);
+            }
+            
+            setIsChecking(false);
+        };
 
-    return children
-}
+        checkAuth();
+    }, [navigate]);
 
-export default CheckAuth
+    // Пока проверяем - показываем loader
+    if (isChecking) {
+        return <div>Проверка авторизации...</div>;
+    }
+
+    // Токен валиден - рендерим children
+    if (isAuthorized) {
+        return children;
+    }
+
+    // Не авторизован - редирект уже сработал
+    return null;
+};
+
+export default CheckAuth;

@@ -128,7 +128,7 @@ export async function initiateConnection({ audio = true, video = true, searchPar
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: searchParameters,
+            body: JSON.stringify(searchParameters),
             credentials: 'include',
         });
 
