@@ -1,9 +1,16 @@
-from fastapi import Request, status
+from fastapi import Request, status, HTTPException
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.infrastructure.adapters.services.jwt_token_provider import JWTTokenProvider
 from app.infrastructure.config.settings import settings
+
+
+def get_current_user_id(request: Request) -> int:
+    user_id = getattr(request.state, 'user_id', None)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    return user_id
 
 
 class AuthenticationMiddleware(BaseHTTPMiddleware):

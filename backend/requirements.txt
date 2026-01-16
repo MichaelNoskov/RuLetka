@@ -12,3 +12,7 @@ minio
 pillow
 python-multipart
 aiohttp
+aiortc
+numpy
+aiochclient
+sentence-transformers

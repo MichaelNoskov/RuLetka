@@ -16,15 +16,9 @@ from app.infrastructure.web.dependencies import (
     get_upload_avatar_use_case,
     get_load_avatar_use_case
 )
+from app.infrastructure.web.middleware.security import get_current_user_id
 
 router = APIRouter()
-
-
-def get_current_user_id(request: Request) -> int:
-    user_id = getattr(request.state, 'user_id', None)
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    return user_id
 
 
 @router.get("/user", response_model=UserResponse)
