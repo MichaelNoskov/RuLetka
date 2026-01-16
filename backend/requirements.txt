@@ -11,3 +11,4 @@ passlib
 minio
 pillow
 python-multipart
+aiohttp

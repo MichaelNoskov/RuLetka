@@ -8,6 +8,7 @@ from app.api.schemas.requests.user import UserRegister, UserInfo
 from app.domain.ports.user_repository import AbstractUserRepository
 from app.domain.ports.password_hasher import AbstractPasswordHasher
 from app.domain.ports.file_storage import AbstractFileStorage
+from app.domain.ports.avatar_provider import AbstractAvatarProvider
 from app.domain.exceptions import UserNotFoundError
 
 
@@ -16,11 +17,13 @@ class UserService:
         self,
         user_repo: AbstractUserRepository,
         password_hasher: AbstractPasswordHasher,
-        avatar_storage: AbstractFileStorage
+        avatar_storage: AbstractFileStorage,
+        avatar_provider: AbstractAvatarProvider,
     ):
         self.user_repo = user_repo
         self.password_hasher = password_hasher
         self.avatar_storage = avatar_storage
+        self.avatar_provider = avatar_provider
     
     async def register(self, user_data: UserRegister) -> User:
         if len(user_data.username) < 3:
@@ -30,6 +33,7 @@ class UserService:
         if existing:
             raise UserAlreadyExistsError("Пользователь уже существует")
 
+        # TODO: загрузку в minio default avatar из статиков при запуске
         user = User(
             username=user_data.username,
             is_male=user_data.is_male,
@@ -37,9 +41,16 @@ class UserService:
             country=user_data.country,
             description=user_data.description,
             hashed_password=self.password_hasher.hash(user_data.password),
-            photo_url=f"https://ui-avatars.com/api/?background=random&name={user_data.username}"
+            photo_url="default"
         )
-        return await self.user_repo.create(user)
+
+        created_user = await self.user_repo.create(user)
+
+        image_bytes = await self.avatar_provider.get_random()
+        if image_bytes:
+            await self.upload_avatar(created_user.id, image_bytes)
+        
+        return created_user
     
     async def login(self, username: str, password: str) -> Optional[User]:
         user = await self.user_repo.get_by_username(username)

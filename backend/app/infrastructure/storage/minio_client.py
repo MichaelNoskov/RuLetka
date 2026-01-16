@@ -5,6 +5,7 @@ from minio.error import S3Error
 from app.infrastructure.config.settings import settings
 
 
+# TODO: сделать обработку ошибок
 class MinIOClient:
     def __init__(self):
         self._client = Minio(
