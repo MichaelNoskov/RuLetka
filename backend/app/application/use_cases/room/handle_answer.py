@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from typing import Dict, Any
 
 from app.core.ports.services.webrtc_manager import AbstractWebRTCManager
-from app.application.mappers.webrtc_mapper import WebRTCMapper
 
 
 @dataclass
@@ -23,4 +22,4 @@ class HandleAnswerUseCaseImpl:
             sdp_type=sdp_type
         )
         
-        return WebRTCMapper.to_answer_response(result)
+        return result
