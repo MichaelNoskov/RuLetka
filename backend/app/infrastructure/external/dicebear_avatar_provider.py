@@ -19,7 +19,6 @@ class DiceBearBotttsProvider(AbstractAvatarProvider):
         return await self._fetch_avatar(safe_username)
     
     async def _fetch_avatar(self, seed: str) -> Optional[bytes]:
-        return None
         url = f"{self.BASE_URL}?seed={seed}"
         try:
             async with aiohttp.ClientSession() as session:

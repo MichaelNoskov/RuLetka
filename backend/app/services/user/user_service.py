@@ -9,6 +9,7 @@ from app.domain.ports.user_repository import AbstractUserRepository
 from app.domain.ports.password_hasher import AbstractPasswordHasher
 from app.domain.ports.file_storage import AbstractFileStorage
 from app.domain.ports.avatar_provider import AbstractAvatarProvider
+from app.domain.ports.image_processor import AbstractImageProcessor
 from app.domain.exceptions import UserNotFoundError
 
 
@@ -19,12 +20,14 @@ class UserService:
         password_hasher: AbstractPasswordHasher,
         avatar_storage: AbstractFileStorage,
         avatar_provider: AbstractAvatarProvider,
+        image_processor: AbstractImageProcessor,
         default_avatar_filename: str = "default_avatar.jpg"
     ):
         self.user_repo = user_repo
         self.password_hasher = password_hasher
         self.avatar_storage = avatar_storage
         self.avatar_provider = avatar_provider
+        self.image_processor = image_processor
         self.default_avatar_filename = default_avatar_filename
     
     async def register(self, user_data: UserRegister) -> User:
@@ -85,20 +88,13 @@ class UserService:
         if not user:
             raise UserNotFoundError("Пользователь не найден")
     
-        try:
-            # TODO: вынести в отдельный репозиторий
-            image = Image.open(io.BytesIO(image_bytes))
-            image = image.convert('RGB')
-    
-            image.thumbnail(size, Image.Resampling.LANCZOS)
-
-            output = io.BytesIO()
-            image.save(output, format='JPEG', quality=85, optimize=True)
-            output.seek(0)
-        except Exception as e:
-            raise ValueError("Ошибка обработки изображения")
+        processed_bytes = self.image_processor.process_avatar(
+            image_bytes, 
+            size=size,
+            quality=85
+        )
         
-        file_url = await self.avatar_storage.save_file(f"avatar_{user_id}", output.read())
+        file_url = await self.avatar_storage.save_file(f"avatar_{user_id}", processed_bytes)
         if not file_url:
             raise NotFound("Файл не найден")
 
