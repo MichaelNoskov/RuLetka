@@ -4,9 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routers.auth import router as auth_router
 from app.api.routers.user import router as user_router
-from app.infrastructure.web.middleware.security import AuthenticationMiddleware
-from app.infrastructure.config.settings import settings
 from app.api.exceptions.handlers import register_exception_handlers
+from app.infrastructure.web.middleware.security import AuthenticationMiddleware
 from app.infrastructure.initializers.static_resource_initializer import StaticResourceInitializer
 
 

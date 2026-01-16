@@ -4,17 +4,18 @@ from io import BytesIO
 
 from app.api.schemas.requests.user import UserInfo
 from app.api.schemas.responses.user import UserResponse
-from app.application.use_cases.user.get_user_profile import GetUserProfileUseCase
-from app.application.use_cases.user.update_user_profile import UpdateUserProfileUseCase
-from app.application.use_cases.user.upload_user_avatar import UploadUserAvatarUseCase
-from app.application.use_cases.user.load_user_avatar import LoadUserAvatarUseCase
+from app.core.ports.usecases.user import (
+    GetUserProfileUseCase,
+    UpdateUserProfileUseCase,
+    UploadUserAvatarUseCase,
+    LoadUserAvatarUseCase
+)
 from app.infrastructure.web.dependencies import (
     get_user_profile_use_case,
     get_update_profile_use_case,
     get_upload_avatar_use_case,
     get_load_avatar_use_case
 )
-from app.application.mappers.user_mapper import UserMapper
 
 router = APIRouter()
 
@@ -31,8 +32,8 @@ async def get_profile(
     user_id: int = Depends(get_current_user_id),
     use_case: GetUserProfileUseCase = Depends(get_user_profile_use_case)
 ):
-    user = await use_case.execute(user_id)
-    return UserResponse(**UserMapper.to_response(user))
+    result = await use_case.execute(user_id)
+    return UserResponse(**result)
 
 
 @router.put("/profile", response_model=UserResponse)
@@ -42,24 +43,23 @@ async def update_profile(
     update_use_case: UpdateUserProfileUseCase = Depends(get_update_profile_use_case),
     get_use_case: GetUserProfileUseCase = Depends(get_user_profile_use_case)
 ):
-    existing_user = await get_use_case.execute_by_username(user_data.username)
-    if existing_user and existing_user.user_id != user_id:
+    existing_user_result = await get_use_case.execute_by_username(user_data.username)
+    if existing_user_result and existing_user_result.get("id") != user_id:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Имя пользователя уже занято"
         )
-
-    from app.application.dto.user import UserUpdateDTO
-    dto = UserUpdateDTO(
+    
+    result = await update_use_case.execute(
+        user_id=user_id,
         username=user_data.username,
         is_male=user_data.is_male,
         birthdate=user_data.birthdate,
         country=user_data.country,
         description=user_data.description
     )
-    
-    updated_user = await update_use_case.execute(user_id, dto)
-    return UserResponse(**UserMapper.to_response(updated_user))
+
+    return UserResponse(**result)
 
 
 @router.get("/profile/image")
@@ -89,16 +89,9 @@ async def upload_avatar(
         )
 
     contents = await file.read()
-
-    from app.application.dto.user import AvatarUploadDTO
-    dto = AvatarUploadDTO(
-        user_id=user_id,
-        image_bytes=contents
-    )
     
-    avatar_url = await use_case.execute(dto)
+    await use_case.execute(user_id, contents)
 
     return {
-        "avatar_url": avatar_url,
         "message": "Фото профиля успешно загружено"
     }

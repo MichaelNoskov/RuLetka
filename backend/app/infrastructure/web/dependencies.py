@@ -1,12 +1,28 @@
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
+from typing import cast
 
-from app.application.use_cases.auth.register_user import RegisterUserUseCase
-from app.application.use_cases.auth.login_user import LoginUserUseCase
-from app.application.use_cases.user.get_user_profile import GetUserProfileUseCase
-from app.application.use_cases.user.update_user_profile import UpdateUserProfileUseCase
-from app.application.use_cases.user.upload_user_avatar import UploadUserAvatarUseCase
-from app.application.use_cases.user.load_user_avatar import LoadUserAvatarUseCase
+from app.core.ports.repositories.user_repository import AbstractUserRepository
+from app.core.ports.services.password_hasher import AbstractPasswordHasher
+from app.core.ports.services.token_provider import AbstractTokenProvider
+from app.core.ports.services.file_storage import AbstractFileStorage
+from app.core.ports.services.image_processor import AbstractImageProcessor
+from app.core.ports.services.avatar_provider import AbstractAvatarProvider
+
+from app.core.ports.usecases.auth import LoginUserUseCase, RegisterUserUseCase
+from app.core.ports.usecases.user import (
+    GetUserProfileUseCase,
+    UpdateUserProfileUseCase,
+    UploadUserAvatarUseCase,
+    LoadUserAvatarUseCase
+)
+
+from app.application.use_cases.auth.register_user import RegisterUserUseCaseImpl
+from app.application.use_cases.auth.login_user import LoginUserUseCaseImpl
+from app.application.use_cases.user.get_user_profile import GetUserProfileUseCaseImpl
+from app.application.use_cases.user.update_user_profile import UpdateUserProfileUseCaseImpl
+from app.application.use_cases.user.upload_user_avatar import UploadUserAvatarUseCaseImpl
+from app.application.use_cases.user.load_user_avatar import LoadUserAvatarUseCaseImpl
 
 from app.infrastructure.adapters.repositories.sqlalchemy_user_repository import SQLAlchemyUserRepository
 from app.infrastructure.adapters.services.bcrypt_hasher import BCryptPasswordHasher
@@ -19,77 +35,97 @@ from app.infrastructure.database.connection import get_db
 from app.infrastructure.config.settings import settings
 
 
-async def get_user_repo(session: AsyncSession = Depends(get_db)):
-    yield SQLAlchemyUserRepository(session)
+async def get_user_repo(session: AsyncSession = Depends(get_db)) -> AbstractUserRepository:
+    return cast(AbstractUserRepository, SQLAlchemyUserRepository(session))
 
-async def get_password_hasher() -> BCryptPasswordHasher:
-    return BCryptPasswordHasher()
+async def get_password_hasher() -> AbstractPasswordHasher:
+    return cast(AbstractPasswordHasher, BCryptPasswordHasher())
 
-async def get_token_provider() -> JWTTokenProvider:
-    return JWTTokenProvider(settings.JWT_SECRET_KEY)
+async def get_token_provider() -> AbstractTokenProvider:
+    return cast(AbstractTokenProvider, JWTTokenProvider(settings.JWT_SECRET_KEY))
 
-async def get_avatar_storage() -> MinIOFileStorage:
+async def get_avatar_storage() -> AbstractFileStorage:
     storage = MinIOFileStorage(settings.MINIO_AVATAR_BUCKET)
-    return storage
+    return cast(AbstractFileStorage, storage)
 
-async def get_avatar_provider() -> DiceBearBotttsProvider:
-    return DiceBearBotttsProvider()
+async def get_avatar_provider() -> AbstractAvatarProvider:
+    return cast(AbstractAvatarProvider, DiceBearBotttsProvider())
 
-async def get_image_processor() -> PillowImageProcessor:
-    return PillowImageProcessor()
+async def get_image_processor() -> AbstractImageProcessor:
+    return cast(AbstractImageProcessor, PillowImageProcessor())
+
 
 async def get_register_use_case(
-    user_repo=Depends(get_user_repo),
-    password_hasher=Depends(get_password_hasher),
-    avatar_storage=Depends(get_avatar_storage),
-    avatar_provider=Depends(get_avatar_provider),
-    image_processor=Depends(get_image_processor),
+    user_repo: AbstractUserRepository = Depends(get_user_repo),
+    password_hasher: AbstractPasswordHasher = Depends(get_password_hasher),
+    avatar_storage: AbstractFileStorage = Depends(get_avatar_storage),
+    avatar_provider: AbstractAvatarProvider = Depends(get_avatar_provider),
+    image_processor: AbstractImageProcessor = Depends(get_image_processor),
 ) -> RegisterUserUseCase:
-    return RegisterUserUseCase(
-        user_repo=user_repo,
-        password_hasher=password_hasher,
-        avatar_storage=avatar_storage,
-        avatar_provider=avatar_provider,
-        image_processor=image_processor
+    return cast(
+        RegisterUserUseCase,
+        RegisterUserUseCaseImpl(
+            user_repo=user_repo,
+            password_hasher=password_hasher,
+            avatar_provider=avatar_provider,
+            avatar_storage=avatar_storage,
+            image_processor=image_processor,
+            default_avatar_filename="default_avatar.jpg"
+        )
     )
 
 async def get_login_use_case(
-    user_repo=Depends(get_user_repo),
-    password_hasher=Depends(get_password_hasher),
-    token_provider=Depends(get_token_provider),
+    user_repo: AbstractUserRepository = Depends(get_user_repo),
+    password_hasher: AbstractPasswordHasher = Depends(get_password_hasher),
+    token_provider: AbstractTokenProvider = Depends(get_token_provider),
 ) -> LoginUserUseCase:
-    return LoginUserUseCase(
-        user_repo=user_repo,
-        password_hasher=password_hasher,
-        token_provider=token_provider
+    return cast(
+        LoginUserUseCase,
+        LoginUserUseCaseImpl(
+            user_repo=user_repo,
+            password_hasher=password_hasher,
+            token_provider=token_provider
+        )
     )
 
 async def get_user_profile_use_case(
-    user_repo=Depends(get_user_repo),
+    user_repo: AbstractUserRepository = Depends(get_user_repo),
 ) -> GetUserProfileUseCase:
-    return GetUserProfileUseCase(user_repo=user_repo)
+    return cast(
+        GetUserProfileUseCase,
+        GetUserProfileUseCaseImpl(user_repo=user_repo)
+    )
 
 async def get_update_profile_use_case(
-    user_repo=Depends(get_user_repo),
+    user_repo: AbstractUserRepository = Depends(get_user_repo),
 ) -> UpdateUserProfileUseCase:
-    return UpdateUserProfileUseCase(user_repo=user_repo)
+    return cast(
+        UpdateUserProfileUseCase,
+        UpdateUserProfileUseCaseImpl(user_repo=user_repo)
+    )
 
 async def get_upload_avatar_use_case(
-    user_repo=Depends(get_user_repo),
-    avatar_storage=Depends(get_avatar_storage),
-    image_processor=Depends(get_image_processor),
+    user_repo: AbstractUserRepository = Depends(get_user_repo),
+    avatar_storage: AbstractFileStorage = Depends(get_avatar_storage),
+    image_processor: AbstractImageProcessor = Depends(get_image_processor),
 ) -> UploadUserAvatarUseCase:
-    return UploadUserAvatarUseCase(
-        user_repo=user_repo,
-        avatar_storage=avatar_storage,
-        image_processor=image_processor
+    return cast(
+        UploadUserAvatarUseCase,
+        UploadUserAvatarUseCaseImpl(
+            user_repo=user_repo,
+            avatar_storage=avatar_storage,
+            image_processor=image_processor
+        )
     )
 
 async def get_load_avatar_use_case(
-    user_repo=Depends(get_user_repo),
-    avatar_storage=Depends(get_avatar_storage),
+    user_repo: AbstractUserRepository = Depends(get_user_repo),
+    avatar_storage: AbstractFileStorage = Depends(get_avatar_storage),
 ) -> LoadUserAvatarUseCase:
-    return LoadUserAvatarUseCase(
-        user_repo=user_repo,
-        avatar_storage=avatar_storage
+    return cast(
+        LoadUserAvatarUseCase,
+        LoadUserAvatarUseCaseImpl(
+            user_repo=user_repo,
+            avatar_storage=avatar_storage
+        )
     )

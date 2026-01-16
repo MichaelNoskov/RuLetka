@@ -1,26 +1,36 @@
 from dataclasses import dataclass
+from typing import Any
+from datetime import date
 
-from app.core.entities.user import User
 from app.core.exceptions import UserNotFoundError
 from app.core.ports.repositories.user_repository import AbstractUserRepository
-from app.application.dto.user import UserUpdateDTO
+from app.core.ports.usecases.user import UpdateUserProfileUseCase
+from app.application.mappers.user_mapper import UserMapper
 
 
 @dataclass
-class UpdateUserProfileUseCase:
+class UpdateUserProfileUseCaseImpl(UpdateUserProfileUseCase):
     user_repo: AbstractUserRepository
     
-    async def execute(self, user_id: int, dto: UserUpdateDTO) -> User:
+    async def execute(
+        self,
+        user_id: int,
+        username: str,
+        is_male: bool,
+        birthdate: date,
+        country: str,
+        description: str = ""
+    ) -> dict[str, Any]:
         user = await self.user_repo.get_by_id(user_id)
         if not user:
             raise UserNotFoundError("Пользователь не найден")
 
-        user.update_profile(
-            username=dto.username,
-            is_male=dto.is_male,
-            birthdate=dto.birthdate,
-            country=dto.country,
-            description=dto.description
-        )
+        user.username = username
+        user.is_male = is_male
+        user.birthdate = birthdate
+        user.country = country
+        user.description = description
         
-        return await self.user_repo.update(user)
+        updated_user = await self.user_repo.update(user)
+
+        return UserMapper.domain_to_api_response(updated_user)

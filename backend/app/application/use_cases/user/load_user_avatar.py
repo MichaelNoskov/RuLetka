@@ -1,13 +1,13 @@
 from dataclasses import dataclass
 
-from app.core.exceptions import UserNotFoundError
+from app.core.exceptions import UserNotFoundError, NotFound
 from app.core.ports.repositories.user_repository import AbstractUserRepository
 from app.core.ports.services.file_storage import AbstractFileStorage
-from app.core.exceptions import NotFound
+from app.core.ports.usecases.user import LoadUserAvatarUseCase
 
 
 @dataclass
-class LoadUserAvatarUseCase:
+class LoadUserAvatarUseCaseImpl(LoadUserAvatarUseCase):
     user_repo: AbstractUserRepository
     avatar_storage: AbstractFileStorage
     
