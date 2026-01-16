@@ -80,7 +80,7 @@ services:
 volumes:
   postgres_data:
   minio_data:
-  clickhouse_data
+  clickhouse_data:
   clickhouse_log:
 
 networks:
