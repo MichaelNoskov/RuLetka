@@ -68,7 +68,7 @@ class SQLAlchemyUserRepository(AbstractUserRepository):
         
         return self._to_domain(db_user)
 
-    async def get_by_id(self, user_id: str) -> Optional[User]:
+    async def get_by_id(self, user_id: int) -> Optional[User]:
         stmt = select(UserModel).where(UserModel.id == user_id)
         result = await self.session.execute(stmt)
         db_user = result.scalar_one_or_none()
