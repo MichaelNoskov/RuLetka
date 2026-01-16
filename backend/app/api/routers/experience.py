@@ -1,5 +1,7 @@
 
 from fastapi import Request, APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi.responses import StreamingResponse
+from io import BytesIO
 
 from app.api.schemas.requests.user import UserInfo
 from app.api.schemas.responses.user import UserResponse
@@ -46,6 +48,34 @@ async def update_profile(
 
     updated_user = await user_service.update_profile(user_id, user_data)
     return UserResponse.from_domain(updated_user)
+
+
+@router.get("/profile/image")
+async def get_file(
+    user_id: int = Depends(get_current_user_id),
+    user_service = Depends(get_user_service)
+):
+    image_bytes = await user_service.load_avatar(user_id)
+    
+    if not image_bytes:
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    filename = "avatar.jpeg"
+    extension = filename.split('.')[-1].lower() if '.' in filename else ''
+    
+    content_types = {
+        'jpeg': 'image/jpeg',
+    }
+    
+    content_type = content_types.get(extension, 'application/octet-stream')
+    
+    return StreamingResponse(
+        BytesIO(image_bytes),
+        media_type=content_type,
+        headers={
+            'Content-Disposition': f'inline; filename="{filename}"'
+        }
+    )
 
 
 @router.post("/profile/image", status_code=status.HTTP_201_CREATED)
