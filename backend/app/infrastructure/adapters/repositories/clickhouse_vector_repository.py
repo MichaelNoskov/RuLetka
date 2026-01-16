@@ -1,5 +1,6 @@
 import numpy as np
 from typing import List, Optional
+
 from app.core.ports.repositories.vector_repository import AbstractVectorRepository
 from app.infrastructure.storage.clickhouse_client import ClickHouseAsyncClient
 
@@ -24,14 +25,14 @@ class ClickHouseVectorRepository(AbstractVectorRepository):
         country: Optional[str] = None
     ) -> None:
         normalized = self._normalize(vector)
-        async with self.client as client:
-            await client.insert_vector({
-                "userid": user_id,
-                "vector": normalized,
-                "gender": gender,
-                "age": age,
-                "country": country
-            })
+        
+        await self.client.insert_vector({
+            "userid": user_id,
+            "vector": normalized,
+            "gender": gender,
+            "age": age,
+            "country": country
+        })
     
     async def search_rooms(
         self,
@@ -41,37 +42,19 @@ class ClickHouseVectorRepository(AbstractVectorRepository):
         country: Optional[str] = None
     ) -> List[str]:
         query_vec = self._normalize(query_vector)
-        vector_str = "[" + ",".join(map(str, query_vec)) + "]"
         
-        conditions = []
-        if gender:
-            conditions.append(f"gender = '{gender}'")
-        if age:
-            conditions.append(f"age = {age}")
-        if country:
-            conditions.append(f"country = '{country}'")
+        results = await self.client.search_vectors(
+            query_vector=query_vec,
+            gender=gender,
+            age=age,
+            country=country,
+            limit=10
+        )
         
-        where_clause = " AND ".join(conditions) if conditions else "1=1"
-        
-        async with self.client as client:
-            sql = f'''
-            SELECT userid
-            FROM user_vectors
-            WHERE 
-                knnMatch(vector, {vector_str}, 'knn_index', 10) AND
-                {where_clause}
-            LIMIT 10
-            '''
-            results = await client.fetch(sql)
-            return [row["userid"] for row in results]
+        return [row["userid"] for row in results]
     
     async def delete_room(self, room_id: str) -> None:
-        async with self.client as client:
-            await client.execute(
-                f"DELETE FROM user_vectors WHERE userid = '{room_id}'"
-            )
+        await self.client.delete_user_vector(room_id)
     
     async def get_user_vector(self, user_id: str) -> Optional[np.ndarray]:
-        async with self.client as client:
-            result = await client.get_vector_by_userid(user_id)
-            return np.array(result) if result else None
+        return await self.client.get_vector_by_userid(user_id)
