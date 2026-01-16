@@ -38,7 +38,7 @@ class ClickHouseAsyncClient:
             self.session = ClientSession()
             self.client = ChClient(
                 self.session,
-                url=settings.CLICKHOUSE_HTTP_URL,
+                url=settings.clickhouse_http_url,
                 user=settings.CLICKHOUSE_USER,
                 password=settings.CLICKHOUSE_PASSWORD,
                 database=settings.CLICKHOUSE_DB
