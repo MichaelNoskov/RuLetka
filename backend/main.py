@@ -26,7 +26,7 @@ async def lifespan(app: FastAPI):
         success = await initializer.initialize_default_avatar()
         
         if success:
-            print("Дефолтный аватар успешно загружен в MinIO", flush=True)
+            print("Дефолтный аватар находится в MinIO", flush=True)
             app.state.default_avatar_filename = initializer.get_default_avatar_filename()
         else:
             print("Ошибка загрузки дефолтного аватара", flush=True)

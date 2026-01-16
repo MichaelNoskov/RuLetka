@@ -5,7 +5,6 @@ from minio.error import S3Error
 from app.infrastructure.config.settings import settings
 
 
-# TODO: сделать обработку ошибок
 class MinIOClient:
     def __init__(self):
         self._client = Minio(
@@ -19,9 +18,9 @@ class MinIOClient:
         try:
             if not self._client.bucket_exists(bucket):
                 self._client.make_bucket(bucket)
-                print(f"Bucket '{bucket}' создан")
+                print(f"Bucket '{bucket}' создан", flush=True)
         except S3Error as e:
-            print(f"Не получилось найти или создать bucket")
+            print(f"Не получилось найти или создать bucket", flush=True)
             raise
     
     async def save_file(self, filename: str, image_bytes: bytes, bucket: str) -> Optional[str]:
@@ -33,11 +32,11 @@ class MinIOClient:
                 length=len(image_bytes),
             )
 
-            print(f"Файл {filename} загружен в bucket {bucket}.")
+            print(f"Файл {filename} загружен в bucket {bucket}.", flush=True)
             return filename
             
         except S3Error as e:
-            print(f"Произошла ошибка при загрузке файла")
+            print(f"Произошла ошибка при загрузке файла", flush=True)
             return None
     
     async def get_file(self, filename: str, bucket: str) -> Optional[bytes]:
@@ -49,15 +48,15 @@ class MinIOClient:
             return image_data
             
         except S3Error as e:
-            print(f"Произошла ошибка при загрузке файла")
+            print(f"Произошла ошибка при загрузке файла", flush=True)
             return None
 
     async def delete_file(self, filename: str, bucket: str) -> bool:
         try:
             self._client.remove_object(bucket, filename)
-            print(f"Файл {filename} удалён из bucket {bucket}.")
+            print(f"Файл {filename} удалён из bucket {bucket}.", flush=True)
             return True
             
         except S3Error as e:
-            print(f"Произошла ошибка при удалении файла")
+            print(f"Произошла ошибка при удалении файла", flush=True)
             return False

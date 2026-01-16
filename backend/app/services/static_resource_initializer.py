@@ -18,7 +18,7 @@ class StaticResourceInitializer:
         try:
             existing_file = await self.file_storage.get_file(filename)
             if existing_file:
-                print(f"Дефолтный аватар уже существует в хранилище")
+                print(f"Дефолтный аватар уже существует в хранилище", flush=True)
                 return True
         except Exception:
             pass
@@ -27,10 +27,10 @@ class StaticResourceInitializer:
         
         try:
             await self.file_storage.save_file(filename, avatar_bytes)
-            print(f"Дефолтный аватар сохранен как {filename}")
+            print(f"Дефолтный аватар сохранен как {filename}", flush=True)
             return True
         except Exception as e:
-            print(f"Ошибка сохранения дефолтного аватара: {e}")
+            print(f"Ошибка сохранения дефолтного аватара: {e}", flush=True)
             return False
     
     def get_default_avatar_filename(self) -> str:
