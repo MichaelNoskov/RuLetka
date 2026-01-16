@@ -1,7 +1,7 @@
 import numpy as np
 from typing import List, Optional
 from app.core.ports.repositories.vector_repository import AbstractVectorRepository
-from infrastructure.storage.clickhouse_client import ClickHouseAsyncClient
+from app.infrastructure.storage.clickhouse_client import ClickHouseAsyncClient
 
 
 class ClickHouseVectorRepository(AbstractVectorRepository):

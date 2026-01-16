@@ -2,10 +2,10 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 from typing import Any
 
-from api.schemas.requests.room import SearchRoomRequest, AnswerRequest
+from app.api.schemas.requests.room import SearchRoomRequest, AnswerRequest
 from app.core.ports.usecases.webrtc import WebRTCOutputPort
-from infrastructure.web.dependencies import get_webrtc_output_port
-from infrastructure.web.middleware.security import get_current_user_id
+from app.infrastructure.web.dependencies import get_webrtc_output_port
+from app.infrastructure.web.middleware.security import get_current_user_id
 
 router = APIRouter()
 
